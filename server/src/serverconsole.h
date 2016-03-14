@@ -7,9 +7,12 @@
 
 class ServerConsole : public QObject
 {
+    friend class UTest;
     Q_OBJECT
 public:
     explicit ServerConsole(QCommandLineParser *parser, QObject *parent = 0);
+    bool trueReturningTestMethod() {return true;}
+    bool falseReturningTestMethod() {return false;}
 
 signals:
 
