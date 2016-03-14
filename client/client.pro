@@ -159,7 +159,7 @@ SOURCES += \
     ../include/x509_csr.c \
     ../include/x509write_crt.c \
     ../include/x509write_csr.c \
-    ../include/mbedtls/xtea.c \
+    ../include/xtea.c \
     test/utest.cpp \
     src/krypto.cpp \
     src/messages.cpp \
