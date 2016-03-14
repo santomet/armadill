@@ -1,4 +1,4 @@
-QT += core
+QT += core testlib
 QT -= gui
 
 CONFIG += console
@@ -82,7 +82,8 @@ HEADERS += src/clientconsole.h \
     src/krypto.h \
     src/messages.h \
     src/serverconnection.h \
-    src/peerconnection.h
+    src/peerconnection.h \
+    src/common.h
 
 SOURCES += \
     src/client.cpp \

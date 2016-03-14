@@ -2,6 +2,7 @@
 #include <QCommandLineParser>
 #include <QTimer>
 #include "clientconsole.h"
+#include "../test/utest.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,21 +18,28 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("port", "port of that server");
     parser.addHelpOption();
 
-//    QCommandLineOption key(QStringList() << "k" << "key", "Password for encryption/decryption. It will be hashed with SHA256 and the digest then used as a key", "password");
+    QCommandLineOption test(QStringList() << "t" << "test", "Run tests");
 //    QCommandLineOption decrypt(QStringList() << "d" << "decrypt", "Decrypt and verify hash");
 //    QCommandLineOption encrypt(QStringList() << "e" << "encrypt", "Encrypt and make hash");
 //    QCommandLineOption hash(QStringList() << "s" << "hash", "Hash to verify","hash");
 //    parser.addOption(encrypt);
 //    parser.addOption(decrypt);
 //    parser.addOption(key);
-//    parser.addOption(hash);
+    parser.addOption(test);
 
     parser.process(a);
 
-    ClientConsole n(&parser, &a);
+    //parse things, run test if test
+    if(parser.isSet(test))
+    {
+        UTest nt(&a);
+    }
+    else
+    {
+    ClientConsole n(&a);
     //QObject::connect(&n, SIGNAL(exitNormal()), &a, SLOT(exit()));
-
     QTimer::singleShot(0, &n, SLOT(init()));
+    }
 
     return a.exec();
 }

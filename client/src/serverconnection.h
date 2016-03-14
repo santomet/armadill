@@ -3,27 +3,13 @@
 
 #include <QObject>
 #include "krypto.h"
+#include "common.h"
 
 class ServerConnection : public QObject
 {
     Q_OBJECT
 public:
     explicit ServerConnection(QObject *parent = 0);
-
-    //----------peers
-    /*!
-         * \brief The peer struct
-         */
-    struct peer
-    {
-        QString name;
-        QString address;
-        int listeningPort;
-        QString cert;
-        bool trustedByServer = false;
-        bool active = false;
-    };
-
 
     QList<peer> mPeers; //list of peers from server
 

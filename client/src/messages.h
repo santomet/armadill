@@ -3,7 +3,8 @@
 
 #include <QObject>
 #include "krypto.h"
-#include "serverconnection.h"
+#include "peerconnection.h"
+#include "common.h"
 #include <QFile>
 #include <QQueue>
 #include <QVector>
@@ -11,11 +12,55 @@
 
 #define MAX_MESSAGES_WITH_ONE_KEY 10
 
-class Messages
+class Messages : public QObject
 {
+    Q_OBJECT
 public:
     const char armaSeparator = '#';
+
+    explicit Messages(QObject *parent = 0);
+
+
+//-----------------------------Structures and types-------------------------------------
+    /*!
+     * \brief ArmaMessage               ArmaMessage should looks like this:
+     *                                  Sender's nick||Receiver's nick||Timestamp||TYPE||Used Key identificator||DH||HMAC||message size||Message
+     *                                  where || concat is non-base64 char defined in armaSeparator
+     *                                  Message is binary, HMAC and DH are base64
+     */
+    typedef QByteArray ArmaMessage;
+
+    /*!
+     * \brief FileChunk                 NOT EXACTLY DEFINED YET
+     */
+    typedef QByteArray FileChunkEncrypted;
+    typedef QByteArray FileChunkDecrypted;
+
+
+    enum MsgType
+    {
+        RegularMessage = 0,
+        RegularMessageDH = 1,
+        FileMessage = 2,
+        FileMessageDH = 3,
+        PureDH = 4
+    };
+
+    struct FileContext
+    {
+        unsigned char id[16]; //shortened hash, maybe? TODO
+        bool sending; //true if file is being sent, false if received
+        QFile *file = nullptr;
+        size_t wholeSize = 0;
+        size_t processedSize = 0;
+        int allParts = 0;
+        int processedParts = 0;
+    };
 //-----------------------Public Methods--------------------------------------------------
+
+    Messages(peer *peerToConnect, QObject *parent = 0);
+    ~Messages();
+
     /*!
      * \brief parseMessage              Parses message and makes proper actions
      *                                  Distinguishes between different types and sends the message
@@ -47,45 +92,10 @@ public:
      */
     ArmaMessage* getFileMessage();
 
-//-----------------------------Structures and types-------------------------------------
-    /*!
-     * \brief ArmaMessage               ArmaMessage should looks like this:
-     *                                  Sender's nick||Receiver's nick||Timestamp||TYPE||Used Key identificator||DH||HMAC||message size||Message
-     *                                  where || concat is non-base64 char defined in armaSeparator
-     *                                  Message is binary, HMAC and DH are base64
-     */
-    typedef QByteArray ArmaMessage;
-
-    /*!
-     * \brief FileChunk                 NOT EXACTLY DEFINED YET
-     */
-    typedef QByteArray FileChunkEncrypted;
-    typedef QByteArray FileChunkDecrypted;
-
-
-    enum MsgType
-    {
-        RegularMessage = 0,
-        RegularMessageDH = 1,
-        FileMessage = 2,
-        FileMessageDH = 3,
-        PureDH = 4
-    };
-
-    struct FileContext
-    {
-        unsigned char id[16]; //shortened hash, maybe?
-        bool sending; //true if file is being sent, false if received
-        QFile *file = nullptr;
-        size_t wholeSize = 0;
-        size_t processedSize = 0;
-        int allParts = 0;
-        int processedParts = 0;
-    };
 
 //---------------------------Others---------------------------------------------------
     Krypto mKrypto;
-    QString mPeer; //nick of peer we are communicating with
+    peer *mPeer;    //actual peer we are communicating with
 
 private:
     /*!
@@ -108,7 +118,6 @@ private:
     int mMyMessagesCounter; //max 10
     int mPeerMessagesCounter;   //max 10
 
-    Messages();
 };
 
 #endif // MESSAGES_H
