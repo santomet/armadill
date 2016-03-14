@@ -70,4 +70,8 @@ Thumbs.db
 *.dll
 *.exe
 
+# Visual studio extra
+client/Win32/*
+server/Win32/*
+
 
