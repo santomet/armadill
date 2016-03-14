@@ -3,11 +3,11 @@
 
 #include <QObject>
 
-#include "../include/aes.h"
-#include "../include/dhm.h"
-#include "../include/x509.h"
-#include "../include/x509_csr.h"
-#include "../include/sha512.h"
+#include "../include/mbedtls/aes.h"
+#include "../include/mbedtls/dhm.h"
+#include "../include/mbedtls/x509.h"
+#include "../include/mbedtls/x509_csr.h"
+#include "../include/mbedtls/sha512.h"
 
 class Krypto    : public QObject
 {
