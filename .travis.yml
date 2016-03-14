@@ -9,7 +9,5 @@ install:
 
 
 script:
-  - qmake armadill.pro CONFIG+=SERVER
-  - make
-  - qmake armadill.pro CONFIG+=CLIENT
+  - qmake armadill.pro
   - make
