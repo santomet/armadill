@@ -18,7 +18,7 @@ QJsonObject ServerManager::exportOnlineUsersJson() {
 	for each (client* client in *clientList)
 	{
 		if (client->loggedIn && 
-			(client->loginValidUntil.toUTC() < QDateTime::currentDateTimeUtc())) {
+			(client->loginValidUntil.toUTC() > QDateTime::currentDateTimeUtc())) {
 			
 			QJsonObject singleClient
 			{
