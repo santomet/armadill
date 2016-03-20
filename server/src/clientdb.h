@@ -1,6 +1,8 @@
 #ifndef CLIENTDB_H
 #define CLIENTDB_H
 
+#include "../../include/sqlite3.h"
+
 #include <QObject>
 #include <QList>
 #include <QFile>
@@ -10,13 +12,17 @@
 struct client
 {
     QString clientNick;
-    QString passwordHash;
     bool loggedIn;
     QString address;
     int listeningPort;
-    QDateTime loginValidUntil;      //NULL if no certificate yet?
+    QDateTime loginValidUntil;
 };
 
+
+class DBException : public std::exception {
+public:
+	DBException(const char *msg) : std::exception(msg) {};
+};
 
 
 class ClientDb : public QObject
@@ -41,7 +47,7 @@ public:
      * \param passwordHash      pwd hash
      * \return                  true if successfully added, false if nick is already used
      */
-    bool addNewClient(QString nick, QString passwordHash);
+    bool addNewClient(const char *nick, const char *passwordHash);
 
     /*!
      * \brief verifyClient       Verifies if loginClient and passwordHash mathes the db DO NOT ADD LOGGED IN FLAG
@@ -49,7 +55,7 @@ public:
      * \param passwordHash
      * \return                  true if everything's allright, false if wrong password or non-existing user
      */
-    bool verifyClient(QString nick, QString passwordHash);
+    bool verifyClient(const char *nick, const char *passwordHash);
 
     /*!
      * \brief loginClient       adds loggedIn flag to client, his address and listening port
@@ -59,35 +65,40 @@ public:
      * \param port
      * \return                  true, false only on error
      */
-    bool loginClient(QString nick, QString address, int port);
+    bool loginClient(const char *nick, const char *address, int port);
+
+	/*!
+	* \brief logoutCient       logout user from database and remove from online client list
+	* \param nick
+	* \return
+	*/
+	bool logoutCient(client *client);
 
     /*!
-     * \brief logoutCient       set loggedIn flag to false
+     * \brief logoutCient       logout user from database
      * \param nick
      * \return
      */
-    bool logoutCient(QString nick);
+    bool logoutCient(const char *nick);
 
     /*!
      * \brief getValidUnti         returns the validity of actual certificate (loginValidUntilFor value)
      * \param nick
      */
-    QDateTime getValidUntil(QString nick);
-
+    // QDateTime getValidUntil(const char *nick);
+	//Useless?? :D
 
     /*!
      * \brief getClientsList        returns a QList of clients, so the parent class can make JSON and send it over
      *                              to clients
      * \return
      */
-    QList<client*> *getClientsList();
+    const QList<client*> &getClientsList();
 
 
 private:
-    QFile mDbFile;  //or better using third-party SQLite-access?
+	sqlite3 *mDbFile;  //or better using third-party SQLite-access?
     QList<client*> mClients;
-
-    //TODO Peťo
 
 signals:
 
