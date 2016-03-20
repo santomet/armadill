@@ -7,9 +7,9 @@
 class ServerManager
 {
 private:
-	ClientDb clientDatabase;
+	ClientDb & clientDatabase;
 public:
-	ServerManager(ClientDb);
+	ServerManager(ClientDb & clientDb) : clientDatabase(clientDb) {};
 	/*!
 	* \brief exportOnlineUsersJson        returns a JSON of online users
 	*                              

@@ -26,7 +26,7 @@ bool ClientDb::addNewClient(const char *nick, const char *passwordHash)
 	return true;
 }
 
-bool ClientDb::verifyClient(const char *nick, const char *passwordHash)
+bool ClientDb::verifyClient(const char *nick, const char *passwordHash) const
 {
 	bool valid = false;
 	sqlite3_stmt * stmt;
@@ -76,7 +76,7 @@ bool ClientDb::logoutCient(const char * nick)
 	return true;
 }
 
-const QList<client*> & ClientDb::getClientsList()
+const QList<client*> & ClientDb::getClientsList() const
 {
 	return mClients;
 }

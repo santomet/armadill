@@ -55,7 +55,7 @@ public:
      * \param passwordHash
      * \return                  true if everything's allright, false if wrong password or non-existing user
      */
-    bool verifyClient(const char *nick, const char *passwordHash);
+    bool verifyClient(const char *nick, const char *passwordHash) const;
 
     /*!
      * \brief loginClient       adds loggedIn flag to client, his address and listening port
@@ -93,7 +93,7 @@ public:
      *                              to clients
      * \return
      */
-    const QList<client*> &getClientsList();
+    const QList<client*> &getClientsList() const;
 
 
 private:
