@@ -20,8 +20,10 @@ struct client
 
 
 class DBException : public std::exception {
+	int id;
 public:
-	DBException(const char *msg) : std::exception(msg) {};
+	DBException(const char *msg, int id = -1) : std::exception(msg), id(id) {};
+	int getID() const { return id; };
 };
 
 
