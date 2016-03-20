@@ -2,6 +2,7 @@
 #include <qjsonarray>
 #include <qjsonobject>
 #include <qjsonvalue>
+#include <qdatetime>
 
 ServerManager::ServerManager(ClientDb clientDb)
 	: clientDatabase(clientDb)
@@ -16,7 +17,8 @@ QJsonObject ServerManager::exportOnlineUsersJson() {
 	QJsonArray clientsArray;
 	for each (client* client in *clientList)
 	{
-		if (client->loggedIn) {
+		if (client->loggedIn && 
+			(client->loginValidUntil.toUTC() < QDateTime::currentDateTimeUtc())) {
 			
 			QJsonObject singleClient
 			{
