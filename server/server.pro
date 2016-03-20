@@ -82,6 +82,7 @@ HEADERS += src/serverconsole.h \
     ../include/mbedtls/xtea.h \
 	../include/sqlite3.h \
     test/utest.h \
+	src/crypto.h \
     src/clientdb.h \
 	src/servermanager.h
 
@@ -160,6 +161,7 @@ SOURCES += \
     ../include/xtea.c \
 	../include/sqlite3.c \
     test/utest.cpp \
+	src/crypto.cpp \
     src/clientdb.cpp \
 	src/servermanager.cpp
 

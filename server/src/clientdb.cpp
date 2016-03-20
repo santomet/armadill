@@ -1,4 +1,5 @@
 #include "clientdb.h"
+#include "crypto.h"
 
 ClientDb::ClientDb(QString pathToFile, QObject *parent) : QObject(parent)
 {
@@ -15,13 +16,15 @@ ClientDb::~ClientDb()
 	sqlite3_close_v2(mDbFile);
 }
 
-bool ClientDb::addNewClient(const char *nick, const char *passwordHash)
+bool ClientDb::addNewClient(const char *nick, const char *password)
 {
 	bool ret = true;
 	sqlite3_stmt * stmt;
 	if (sqlite3_prepare_v2(mDbFile, "INSERT INTO Clients (username, password) VALUES(?, ?)", -1, &stmt, nullptr) != SQLITE_OK) throw DBException("Can't prepare statement in addNewClient!");
 	if (sqlite3_bind_text(stmt, 1, nick,			-1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 1 in addNewClient!");
-	if (sqlite3_bind_text(stmt, 2, passwordHash, -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 2 in addNewClient!");
+
+	std::string hash = pm.hash(password);
+	if (sqlite3_bind_text(stmt, 2, hash.c_str(), -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 2 in addNewClient!");
 	int e = sqlite3_step(stmt);
 	if (e == SQLITE_CONSTRAINT) ret = false;
 	else if (e != SQLITE_DONE)	throw DBException("Can't do statement step in addNewClient!", e);
@@ -31,7 +34,7 @@ bool ClientDb::addNewClient(const char *nick, const char *passwordHash)
 	return true;
 }
 
-bool ClientDb::verifyClient(const char *nick, const char *passwordHash) const
+bool ClientDb::verifyClient(const char *nick, const char *password) const
 {
 	bool valid = false;
 	sqlite3_stmt * stmt;
@@ -41,7 +44,7 @@ bool ClientDb::verifyClient(const char *nick, const char *passwordHash) const
 	int e = sqlite3_step(stmt);
 	if (e != SQLITE_DONE) {
 		if (e != SQLITE_ROW) throw DBException("Can't do statement step in verifyClient!");
-		if (!strcmp(reinterpret_cast<const char *>(passwordHash), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))) valid = true;
+		if (pm.verify(reinterpret_cast<const char *>(password), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))) valid = true;
 	}
 	if(sqlite3_finalize(stmt) != SQLITE_OK) throw DBException("Can't finalize statement in verifyClient!");
 	return valid;

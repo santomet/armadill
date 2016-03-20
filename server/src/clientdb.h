@@ -3,6 +3,8 @@
 
 #include "../../include/sqlite3.h"
 
+#include "crypto.h"
+
 #include <QObject>
 #include <QList>
 #include <QFile>
@@ -46,18 +48,18 @@ public:
     /*!
      * \brief addNewClient      Adds new client to the db
      * \param nick              nick of new client
-     * \param passwordHash      pwd hash
+     * \param password			client password
      * \return                  true if successfully added, false if nick is already used
      */
-    bool addNewClient(const char *nick, const char *passwordHash);
+    bool addNewClient(const char *nick, const char *passwor);
 
     /*!
      * \brief verifyClient       Verifies if loginClient and passwordHash mathes the db DO NOT ADD LOGGED IN FLAG
      * \param nick
-     * \param passwordHash
+     * \param password			client password
      * \return                  true if everything's allright, false if wrong password or non-existing user
      */
-    bool verifyClient(const char *nick, const char *passwordHash) const;
+    bool verifyClient(const char *nick, const char *password) const;
 
     /*!
      * \brief loginClient       adds loggedIn flag to client, his address and listening port
@@ -101,6 +103,7 @@ public:
 private:
 	sqlite3 *mDbFile;  //or better using third-party SQLite-access?
     QList<client*> mClients;
+	PasswordManager pm;
 
 signals:
 
