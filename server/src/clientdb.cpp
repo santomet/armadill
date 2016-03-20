@@ -17,12 +17,17 @@ ClientDb::~ClientDb()
 
 bool ClientDb::addNewClient(const char *nick, const char *passwordHash)
 {
+	bool ret = true;
 	sqlite3_stmt * stmt;
-	if(sqlite3_prepare_v2(mDbFile, "INSERT INTO Clients (username, password) VALUES(?, ?)", -1, &stmt, nullptr) != SQLITE_OK) throw DBException("Can't prepare statement in addNewClient!");
-	if(sqlite3_bind_text(stmt, 1, nick,			-1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 1 in addNewClient!");
-	if(sqlite3_bind_text(stmt, 2, passwordHash, -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 2 in addNewClient!");
-	if(sqlite3_step(stmt) != SQLITE_DONE)		throw DBException("Can't do statement step in addNewClient!");
-	if (sqlite3_finalize(stmt) != SQLITE_OK)	throw DBException("Can't finalize statement in addNewClient!");
+	if (sqlite3_prepare_v2(mDbFile, "INSERT INTO Clients (username, password) VALUES(?, ?)", -1, &stmt, nullptr) != SQLITE_OK) throw DBException("Can't prepare statement in addNewClient!");
+	if (sqlite3_bind_text(stmt, 1, nick,			-1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 1 in addNewClient!");
+	if (sqlite3_bind_text(stmt, 2, passwordHash, -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 2 in addNewClient!");
+	int e = sqlite3_step(stmt);
+	if (e == SQLITE_CONSTRAINT) ret = false;
+	else if (e != SQLITE_DONE)	throw DBException("Can't do statement step in addNewClient!", e);
+	
+	e = sqlite3_finalize(stmt);
+	if (e != SQLITE_OK && e != SQLITE_CONSTRAINT)	throw DBException("Can't finalize statement in addNewClient!");
 	return true;
 }
 
