@@ -80,7 +80,8 @@ HEADERS += src/serverconsole.h \
     ../include/mbedtls/x509_crt.h \
     ../include/mbedtls/x509_csr.h \
     ../include/mbedtls/xtea.h \
-    test/utest.h
+    test/utest.h \
+    src/clientdb.h
 
 SOURCES += \
     src/server.cpp \
@@ -155,7 +156,8 @@ SOURCES += \
     ../include/x509write_crt.c \
     ../include/x509write_csr.c \
     ../include/xtea.c \
-    test/utest.cpp
+    test/utest.cpp \
+    src/clientdb.cpp
 
 DISTFILES += \
     ../include/cmake_install.cmake \
