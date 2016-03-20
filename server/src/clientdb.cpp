@@ -37,8 +37,12 @@ bool ClientDb::verifyClient(const char *nick, const char *passwordHash) const
 	sqlite3_stmt * stmt;
 	if(sqlite3_prepare_v2(mDbFile, "SELECT password FROM Clients WHERE username = ?", -1, &stmt, nullptr) != SQLITE_OK) throw DBException("Can't prepare statement in verifyClient!");
 	if(sqlite3_bind_text(stmt, 1, nick, -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 1 in verifyClient!");
-	if(sqlite3_step(stmt) != SQLITE_ROW) throw DBException("Can't do statement step in verifyClient!");
-	if(!strcmp(reinterpret_cast<const char *>(passwordHash), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))) valid = true;
+	
+	int e = sqlite3_step(stmt);
+	if (e != SQLITE_DONE) {
+		if (e != SQLITE_ROW) throw DBException("Can't do statement step in verifyClient!");
+		if (!strcmp(reinterpret_cast<const char *>(passwordHash), reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))) valid = true;
+	}
 	if(sqlite3_finalize(stmt) != SQLITE_OK) throw DBException("Can't finalize statement in verifyClient!");
 	return valid;
 }
