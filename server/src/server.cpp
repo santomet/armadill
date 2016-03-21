@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     if(parser.isSet(test))
     {
         UTest test;
-        return test.makeTests();
+        return test.makeTests(argc, argv);
     }
     else
     {

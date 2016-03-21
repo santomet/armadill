@@ -5,14 +5,21 @@
 #include <QDateTime>
 
 
-bool ServerManager::newRegistration(QString nickName, QString passwordHash)
+bool ServerManager::newRegistration(QString nickName, QString password)
 {
-    clientDatabase.addNewClient(nickName.toLatin1().constData(), passwordHash.toLatin1().constData());
+    return clientDatabase.addNewClient(nickName.toLatin1().constData(), password.toLatin1().constData());
 }
 
 bool ServerManager::login(QString nickname, QString password, QString address, int port, QString cert)
 {
-
+    bool ret = true;
+    if(clientDatabase.verifyClient(nickname.toLatin1().constData(), password.toLatin1().constData()))
+    {
+        //TODO: SIGN client's certificate
+        if(ret)
+            ret = clientDatabase.loginClient(nickname.toLatin1().constData(), address.toLatin1().constData(), port);
+    }
+    return ret;
 }
 
 QJsonObject ServerManager::exportOnlineUsersJson() {

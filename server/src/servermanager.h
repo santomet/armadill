@@ -11,15 +11,18 @@ class ServerManager : public QObject
 private:
     ClientDb clientDatabase;
 public:
+
+    ClientDb *getClientDb() {return &clientDatabase;}
+
     ServerManager(QString path) : clientDatabase(path) {}
 
     /*!
      * \brief newRegistration               Registers a new user
      * \param nickName
-     * \param passwordHash
+     * \param password
      * \return                              True if successfully registered, false if something went wrong/user already exists
      */
-    bool newRegistration(QString nickName, QString passwordHash);
+    bool newRegistration(QString nickName, QString password);
 
     /*!
      * \brief login                         Tries to authentify new user and set his state as logged in

@@ -1,4 +1,5 @@
 #include "utest.h"
+#define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
 #include <QDebug>
 
@@ -7,9 +8,20 @@ UTest::UTest()
 
 }
 
-int UTest::makeTests()
+TEST_CASE( "New user registration", "[user]" )
 {
-    qDebug() << "here comes the test";
-    return 0;
+    REQUIRE(true);
+    ServerManager mngr("testdb.sql");
+    mngr.newRegistration("keket", "heslo");
+    REQUIRE(mngr.getClientDb()->verifyClient("keket", "heslo"));
+    REQUIRE(!mngr.getClientDb()->verifyClient("keket", "zleheslo"));
 }
+
+
+int UTest::makeTests(int argc, char *argv[])
+{
+    return Catch::Session().run( 1, argv );
+}
+
+
 

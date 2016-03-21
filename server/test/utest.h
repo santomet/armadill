@@ -9,7 +9,7 @@ class UTest
 public:
     UTest();
 
-    int makeTests();
+    int makeTests(int argc, char *argv[]);
 };
 
 #endif // UTEST_H
