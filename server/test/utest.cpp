@@ -1,6 +1,6 @@
 #include "utest.h"
 #define CATCH_CONFIG_RUNNER
-#include <catch.hpp>
+#include "../../include/catch.hpp"
 #include <QDebug>
 #include <QFile>
 

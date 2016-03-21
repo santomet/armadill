@@ -7,13 +7,13 @@ CONFIG -= app_bundle
 unix {
 	QMAKE_CXX = g++-4.8
 	QMAKE_CXXFLAGS += -std=c++11
+	
+	LIBS += -ldl
 }
 
 TEMPLATE = app
 
 TARGET = armadill-server
-
-LIBS += -ldl
 
 HEADERS += src/serverconsole.h \
     ../include/mbedtls/aes.h \
@@ -83,6 +83,7 @@ HEADERS += src/serverconsole.h \
     ../include/mbedtls/x509_csr.h \
     ../include/mbedtls/xtea.h \
 	../include/sqlite3.h \
+	../include/catch.hpp \
     test/utest.h \
 	src/crypto.h \
     src/clientdb.h \
