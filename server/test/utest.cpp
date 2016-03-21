@@ -35,6 +35,7 @@ TEST_CASE("Log in user, getting JSON", "[user]")
 
     REQUIRE(!mngr.login("keket", "ZLEheslo", "127.0.0.1", 666, "NO_CERT_YET"));
     REQUIRE(mngr.login("keket", "heslo", "127.0.0.1", 666, "NO_CERT_YET"));
+    REQUIRE(!mngr.login("neexistujucikeket", "heslo", "127.0.0.1", 666, "NO_CERT_YET"));
 
     QJsonObject json = mngr.exportOnlineUsersJson();
     QJsonObject test;
