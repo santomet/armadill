@@ -22,13 +22,11 @@ struct client
 };
 
 
-class DBException : public std::exception {
+class DBException : public std::runtime_error {
 	int id;
 public:
-    DBException(const char *msg) {
-        qDebug() << msg;
-        throw std::exception();
-    }
+	DBException(const char *msg, int id = -1) : std::runtime_error(msg), id(id) {};
+	int getID() const { return id; };
 };
 
 
