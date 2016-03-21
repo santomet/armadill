@@ -31,7 +31,7 @@ bool ClientDb::addNewClient(const char *nick, const char *password)
 	
 	e = sqlite3_finalize(stmt);
 	if (e != SQLITE_OK && e != SQLITE_CONSTRAINT)	throw DBException("Can't finalize statement in addNewClient!");
-	return true;
+    return ret;
 }
 
 bool ClientDb::verifyClient(const char *nick, const char *password) const
@@ -66,7 +66,7 @@ bool ClientDb::loginClient(const char * nick, const char * address, int port)
 	c->listeningPort = port;
 	c->loggedIn = true;
 	c->loginValidUntil = QDateTime::currentDateTime();
-	c->loginValidUntil.addSecs(600);
+    c->loginValidUntil = c->loginValidUntil.addSecs(600);
 	mClients.push_back(c);
 	return true;
 }
