@@ -15,6 +15,9 @@ public:
 
     bool newRegistration(QString nickName, QString passwordHash);
 
+    bool login(QString nickname, QString password, QString address, int port, QString cert);
+
+
 
 	/*!
 	* \brief exportOnlineUsersJson        returns a JSON of online users
