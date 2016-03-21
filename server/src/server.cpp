@@ -2,6 +2,7 @@
 #include <QCommandLineParser>
 #include <QTimer>
 #include "serverconsole.h"
+#include "../test/utest.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,22 +19,26 @@ int main(int argc, char *argv[])
 
     QCommandLineOption cert(QStringList() << "c" << "cert", "File for used HTTPS certificate", "file");
     QCommandLineOption test(QStringList() << "t" << "test"); //Run unit tests
-//    QCommandLineOption decrypt(QStringList() << "d" << "decrypt", "Decrypt and verify hash");
-//    QCommandLineOption encrypt(QStringList() << "e" << "encrypt", "Encrypt and make hash");
-//    QCommandLineOption hash(QStringList() << "s" << "hash", "Hash to verify","hash");
     parser.addOption(cert);
     parser.addOption(test);
-//    parser.addOption(decrypt);
-//    parser.addOption(key);
-//    parser.addOption(hash);
+
 
     parser.process(a);
 
-    ServerConsole n(&parser, &a);
-    //QObject::connect(&n, SIGNAL(exitNormal()), &a, SLOT(exit()));
+    if(parser.isSet(test))
+    {
+        UTest test;
+        return test.makeTests();
+    }
+    else
+    {
+        ServerConsole n(&parser, &a);
+        //QObject::connect(&n, SIGNAL(exitNormal()), &a, SLOT(exit()));
 
-    QTimer::singleShot(0, &n, SLOT(init()));
+        QTimer::singleShot(0, &n, SLOT(init()));
 
-    return a.exec();
+        return a.exec();
+    }
+    return 1;
 }
 

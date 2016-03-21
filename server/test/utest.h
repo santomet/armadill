@@ -8,6 +8,8 @@ class UTest
 {
 public:
     UTest();
+
+    int makeTests();
 };
 
 #endif // UTEST_H

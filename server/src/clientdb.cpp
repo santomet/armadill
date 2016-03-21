@@ -27,7 +27,7 @@ bool ClientDb::addNewClient(const char *nick, const char *password)
 	if (sqlite3_bind_text(stmt, 2, hash.c_str(), -1, SQLITE_STATIC) != SQLITE_OK) throw DBException("Can't bind statement parameter 2 in addNewClient!");
 	int e = sqlite3_step(stmt);
 	if (e == SQLITE_CONSTRAINT) ret = false;
-	else if (e != SQLITE_DONE)	throw DBException("Can't do statement step in addNewClient!", e);
+    else if (e != SQLITE_DONE)	throw DBException("Can't do statement step in addNewClient!");
 	
 	e = sqlite3_finalize(stmt);
 	if (e != SQLITE_OK && e != SQLITE_CONSTRAINT)	throw DBException("Can't finalize statement in addNewClient!");

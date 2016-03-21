@@ -1,15 +1,21 @@
 #ifndef SERVERMANAGER_H
 #define SERVERMANAGER_H
 
-#include <qjsonobject>
+#include <QObject>
+#include <QJsonObject>
 #include "clientdb.h"
 
-class ServerManager
+class ServerManager : public QObject
 {
+    Q_OBJECT
 private:
-	ClientDb & clientDatabase;
+    ClientDb clientDatabase;
 public:
-	ServerManager(ClientDb & clientDb) : clientDatabase(clientDb) {};
+    ServerManager(QString path) : clientDatabase(path) {}
+
+    bool newRegistration(QString nickName, QString passwordHash);
+
+
 	/*!
 	* \brief exportOnlineUsersJson        returns a JSON of online users
 	*                              

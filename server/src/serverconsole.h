@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QCommandLineParser>
 #include <QObject>
+#include "servermanager.h"
 
 class ServerConsole : public QObject
 {

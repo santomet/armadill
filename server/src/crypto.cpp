@@ -29,7 +29,7 @@ std::string PasswordManager::hash(const char *password) {
 	mbedtls_base64_encode(reinterpret_cast<unsigned char *>(enc), 128, &len, pass, 64);
 	str += enc;
 	return str;
-};
+}
 
 bool PasswordManager::verify(const char *password, const char *hash) const {
 	unsigned char salt[16];
@@ -56,4 +56,4 @@ bool PasswordManager::verify(const char *password, const char *hash) const {
 
 	mbedtls_pkcs5_pbkdf2_hmac(&ctx, reinterpret_cast<const unsigned char *>(password), strlen(password), salt, 16, 1000, 64, ipass);
 	return memcmp(ipass, pass, 64) == 0;
-};
+}

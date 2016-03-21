@@ -13,6 +13,8 @@ TEMPLATE = app
 
 TARGET = armadill-server
 
+LIBS += -ldl
+
 HEADERS += src/serverconsole.h \
     ../include/mbedtls/aes.h \
     ../include/mbedtls/aesni.h \

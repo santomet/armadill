@@ -10,6 +10,7 @@
 #include <QFile>
 #include <QDateTime>
 #include <QString>
+#include <QDebug>
 
 struct client
 {
@@ -24,8 +25,10 @@ struct client
 class DBException : public std::exception {
 	int id;
 public:
-	DBException(const char *msg, int id = -1) : std::exception(msg), id(id) {};
-	int getID() const { return id; };
+    DBException(const char *msg) {
+        qDebug() << msg;
+        throw std::exception();
+    }
 };
 
 
