@@ -5,6 +5,16 @@
 #include <QDateTime>
 
 
+bool ServerManager::newRegistration(QString nickName, QString passwordHash)
+{
+    clientDatabase.addNewClient(nickName.toLatin1().constData(), passwordHash.toLatin1().constData());
+}
+
+bool ServerManager::login(QString nickname, QString password, QString address, int port, QString cert)
+{
+
+}
+
 QJsonObject ServerManager::exportOnlineUsersJson() {
 	const QList<client*> & clientList = clientDatabase.getClientsList();
 	

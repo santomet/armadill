@@ -15,4 +15,4 @@ install:
 script:
   - qmake armadill.pro
   - make
-  - ./armadill-server -t
+  - ./server/armadill-server -t
