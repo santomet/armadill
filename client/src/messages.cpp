@@ -52,7 +52,6 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 	
 	type = list[3].toShort();
 	
-	parsedMessage.timestamp = timestamp;
 
 	QByteArray messageText;
 
