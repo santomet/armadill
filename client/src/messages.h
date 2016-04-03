@@ -12,7 +12,6 @@
 #include <QTime>
 
 
-
 class Session {
 	SessionKey key;
 	QString myName;
@@ -84,6 +83,13 @@ public:
         int allParts = 0;
         int processedParts = 0;
     };
+
+	struct ReceivedMessage
+	{
+		QByteArray messageText;
+		QDateTime timestamp;
+
+	};
 //-----------------------Public Methods--------------------------------------------------
 
     Messages(peer *peerToConnect, QObject *parent = 0);
@@ -96,7 +102,7 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    bool parseMessage(const ArmaMessage &message);
+    bool parseMessage(Session & session, const ArmaMessage &message, ReceivedMessage & receivedMessage);
 
     /*!
      * \brief createRegularMessage      Creates regular ArmaMessage that will be ready to send
@@ -133,14 +139,18 @@ private:
      */
     bool parseFileMessage(const FileChunkEncrypted &fileChunk);
 
-    bool parseRegularMessage(const QByteArray &encryptedData);
-
+	
     ArmaMessage* createFileMessage(FileContext *context, QString eceiver);
 
     QList<FileContext*>  mFileContexts;
     QList<FileChunkDecrypted*> mUnorderedFileBlocks;
 
 
+};
+
+class MessageException : public std::runtime_error {
+public:
+	MessageException(const char * msg) : std::runtime_error(msg) {};
 };
 
 #endif // MESSAGES_H
