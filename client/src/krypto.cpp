@@ -92,6 +92,9 @@ QByteArray SessionKey::getDH() {
 }
 
 QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & data) {
+	if (key_enc_uses >= 10) throw KryptoOveruseException("Key was already used for 10 encryptions.");
+	++key_enc_uses;
+
 	unsigned char iv[16], tag[TAG_LENGTH];
 	unsigned char * output = new unsigned char[message.length()];
 
@@ -143,4 +146,5 @@ void SessionKey::generateKey() {
 	if (mbedtls_dhm_calc_secret(&dhmc, key, ENCRYPTION_KEY_SIZE, &olen, nullptr, nullptr)) throw KryptoException("generateKey: Can't calculate secret.");
 	currentkey.setRawData(reinterpret_cast<const char *>(key), olen);
 	my = other = false;
+	key_enc_uses = key_dec_uses = 0;
 }

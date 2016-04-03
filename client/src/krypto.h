@@ -130,9 +130,13 @@ private:
 
 
 class KryptoException : public std::runtime_error {
-
 public:
-	KryptoException(const char * msg) : runtime_error(msg) {};
+	KryptoException(const char * msg) : std::runtime_error(msg) {};
+};
+
+class KryptoOveruseException : public KryptoException {
+public:
+	KryptoOveruseException(const char * msg) : KryptoException(msg) {};
 };
 
 class SessionKey {
@@ -145,6 +149,9 @@ class SessionKey {
 
 	bool my;
 	bool other;
+
+	size_t key_enc_uses = 0;
+	size_t key_dec_uses = 0;
 
 	void generateKey();
 public:
@@ -167,6 +174,10 @@ public:
 	QByteArray encrypt(const QByteArray & message, const QByteArray & data);
 
 	QByteArray decrypt(const QByteArray & message, const QByteArray & data);
+
+	size_t getKeyEncUses() const { return key_enc_uses; };
+
+	size_t getKeyDecUses() const { return key_dec_uses; };
 };
 
 #endif // KRYPTO_H
