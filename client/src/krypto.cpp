@@ -101,7 +101,8 @@ QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & da
 
 	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), output, TAG_LENGTH, tag);
-	QByteArray ret(reinterpret_cast<const char *>(iv), 16);
+	QByteArray ret(1, keyid);
+	ret.append(reinterpret_cast<const char *>(iv), 16);
 	ret.append(reinterpret_cast<const char *>(tag), TAG_LENGTH);
 	ret.append(reinterpret_cast<const char *>(output), message.length());
 	delete output;
@@ -134,6 +135,7 @@ QByteArray SessionKey::decrypt(const QByteArray & message, const QByteArray & da
 void SessionKey::generateKey() {
 	if (!my || !other) throw KryptoException("generateKey: missing DH component.");
 	oldkey = currentkey;
+	++keyid;
 	
 	unsigned char key[ENCRYPTION_KEY_SIZE];
 	size_t olen;

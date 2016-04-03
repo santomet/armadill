@@ -145,6 +145,7 @@ class SessionKey {
 	mbedtls_dhm_context dhmc;
 	mbedtls_gcm_context gcmc;
 
+	unsigned char keyid = 0;
 	QByteArray oldkey;
 	QByteArray currentkey;
 
@@ -184,6 +185,10 @@ public:
 	size_t getKeyEncUses() const { return key_enc_uses; };
 
 	size_t getKeyDecUses() const { return key_dec_uses; };
+
+	bool getMyDHCreated() const { return my; };
+
+	bool getOtherDHRecieved() const { return other; };
 };
 
 #endif // KRYPTO_H
