@@ -106,10 +106,19 @@ public:
 
     /*!
      * \brief createRegularMessage      Creates regular ArmaMessage that will be ready to send
+	 * \param session					Session for which the message is intended for
      * \param message                   message
      * \return                          ArmaMessage which can be sent to peer
      */
     ArmaMessage createRegularMessage(Session & session, const QString & message);
+
+	/*!
+	* \brief createLoginMessage			Creates login ArmaMessage that will be ready to send to server
+	* \param name						client name
+	* \param password					password for client name
+	* \return							ArmaMessage which can be sent to server
+	*/
+	ArmaMessage createLoginMessage(QString & name, const QString & password);
 
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger

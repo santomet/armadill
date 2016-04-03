@@ -37,6 +37,13 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	return ret;
 }
 
+Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password) {
+	ArmaMessage ret;
+	ret.append(name.toUtf8());
+	ret.append(password.toUtf8().toBase64());
+	return ret;
+}
+
 bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
 	QByteArray senderNick, receiverNick, dh;
 	QDateTime timestamp;
