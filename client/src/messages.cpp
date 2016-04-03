@@ -66,7 +66,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 	if (type == RegularMessage) {
 		if (list.size() != 5) throw new MessageException("incomplete message");
 		SessionKey& sk = session.getKey();
-		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 1;
+		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
 		try{
 			messageText = sk.decrypt(list[4], message.left(contextDataLength));
 		}
@@ -82,7 +82,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		dh = list[4];
 		SessionKey& sk = session.getKey();
 		sk.setDH(dh);
-		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 1;
+		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
 		try {
 			messageText = sk.decrypt(list[5], message.left(contextDataLength));
