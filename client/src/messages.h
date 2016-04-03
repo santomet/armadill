@@ -9,8 +9,9 @@
 #include <QQueue>
 #include <QVector>
 #include <QList>
+#include <QTime>
 
-#define MAX_MESSAGES_WITH_ONE_KEY 10
+
 
 class Messages : public QObject
 {
@@ -24,7 +25,7 @@ public:
 //-----------------------------Structures and types-------------------------------------
     /*!
      * \brief ArmaMessage               ArmaMessage should looks like this:
-     *                                  Sender's nick||Receiver's nick||Timestamp||TYPE||Used Key identificator||DH||HMAC||message size||Message
+     *                                  Sender's nick||Receiver's nick||Timestamp||TYPE||DH||Used Key identificator||HMAC||Message
      *                                  where || concat is non-base64 char defined in armaSeparator
      *                                  Message is binary, HMAC and DH are base64
      */
@@ -75,7 +76,7 @@ public:
      * \param message                   message
      * \return                          ArmaMessage which can be sent to peer
      */
-    ArmaMessage* createRegularMessage(const QString message);
+    ArmaMessage createRegularMessage(Session & session, const QString & message);
 
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
@@ -112,12 +113,24 @@ private:
     QList<FileContext*>  mFileContexts;
     QList<FileChunkDecrypted*> mUnorderedFileBlocks;
 
-    //---------DH
-    QByteArray mDHSharedPrivateMy; //result of DH - one part used as AES key, second as HMAC key
-    QByteArray mDHSharedPrivatePeer; //Shared Private my peer is using
-    int mMyMessagesCounter; //max 10
-    int mPeerMessagesCounter;   //max 10
 
+};
+
+
+
+
+class Session {
+	SessionKey key;
+	QString myName;
+	QString otherName;
+public:
+	Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
+
+	const QString & getMyName() const { return myName; };
+
+	const QString & getPartnerName() const { return otherName; };
+
+	SessionKey & getKey() { return key; };
 };
 
 #endif // MESSAGES_H

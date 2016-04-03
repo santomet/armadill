@@ -13,6 +13,12 @@
 #include "../include/mbedtls/entropy.h"
 #include "../include/mbedtls/ctr_drbg.h"
 
+
+#define ENCRYPTION_KEY_SIZE 256
+#define TAG_LENGTH	128
+#define MAX_MESSAGES_WITH_ONE_KEY 10
+
+
 class Krypto    : public QObject
 {
     Q_OBJECT
@@ -155,7 +161,6 @@ class SessionKey {
 	size_t key_enc_uses = 0;
 	size_t key_dec_uses = 0;
 
-	void generateKey();
 public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
 		mbedtls_gcm_init(&gcmc);
@@ -186,9 +191,11 @@ public:
 
 	size_t getKeyDecUses() const { return key_dec_uses; };
 
-	bool getMyDHCreated() const { return my; };
+	bool isMyDHCreated() const { return my; };
 
-	bool getOtherDHRecieved() const { return other; };
+	bool isOtherDHRecieved() const { return other; };
+
+	bool generateKey();
 };
 
 #endif // KRYPTO_H

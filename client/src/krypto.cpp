@@ -1,10 +1,6 @@
 #include "krypto.h"
 #include <QDateTime>
 
-
-#define ENCRYPTION_KEY_SIZE 256
-#define TAG_LENGTH	128
-
 inline const unsigned char * toUChar(const QByteArray & a) { return reinterpret_cast<const unsigned char *>(a.operator const char *()); };
 
 
@@ -77,7 +73,6 @@ QString Krypto::hash(QByteArray &chunks)
 void SessionKey::setDH(QByteArray dh) {
 	if (mbedtls_dhm_read_public(&dhmc, toUChar(dh), dh.length())) throw KryptoException("setDH: can't read DH");
 	other = true;
-	if (my) generateKey();
 }
 
 QByteArray SessionKey::getDH() {
@@ -87,12 +82,11 @@ QByteArray SessionKey::getDH() {
 	QByteArray ret = QByteArray(reinterpret_cast<const char *>(dhm), len);
 	delete dhm;
 	my = true;
-	if (other) generateKey();
 	return ret;
 }
 
 QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & data) {
-	if (key_enc_uses >= 10) throw KryptoOveruseException("Key was already used for 10 encryptions.");
+	if (key_enc_uses >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 encryptions.");
 	++key_enc_uses;
 
 	unsigned char iv[16], tag[TAG_LENGTH];
@@ -132,8 +126,8 @@ QByteArray SessionKey::decrypt(const QByteArray & message, const QByteArray & da
 
 
 
-void SessionKey::generateKey() {
-	if (!my || !other) throw KryptoException("generateKey: missing DH component.");
+bool SessionKey::generateKey() {
+	if (!my || !other) return false;
 	oldkey = currentkey;
 	++keyid;
 	
@@ -143,4 +137,5 @@ void SessionKey::generateKey() {
 	currentkey.setRawData(reinterpret_cast<const char *>(key), olen);
 	my = other = false;
 	key_enc_uses = key_dec_uses = 0;
+	return true;
 }
