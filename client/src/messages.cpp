@@ -22,12 +22,12 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	ret.append(Messages::armaSeparator);
 	
 	if (!key.isMyDHCreated()) {
-		ret.append(static_cast<char>(Messages::RegularMessageDH));
+		ret.append('A' + Messages::RegularMessageDH);
 		ret.append(Messages::armaSeparator);
-		ret.append(key.getDH());
+		ret.append(key.getDH().toBase64());
 	}
 	else {
-		ret.append(static_cast<char>(Messages::RegularMessageDH));
+		ret.append('A' + Messages::RegularMessage);
 	}
 	ret.append(Messages::armaSeparator);
 
