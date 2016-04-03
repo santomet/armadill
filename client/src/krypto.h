@@ -179,22 +179,63 @@ public:
 
 	SessionKey & operator=(const SessionKey &) = delete;
 
+	/*!
+	* \brief setDH
+	* \param dh						   Diffie Hellman retrieved from partner
+	* \return                          void
+	*/
 	void setDH(QByteArray dh);
 
+	/*!
+	* \brief getDH
+	* \return                          New generated diffie-hellman
+	*/
 	QByteArray getDH();
 
+	/*!
+	* \brief encrypt
+	* \param message					Message, that should be encrypted and signed
+	* \param data						Data, that should be signed but not encrypted
+	* \return							Payload, to be sent to partner
+	*/
 	QByteArray encrypt(const QByteArray & message, const QByteArray & data);
 
+	/*!
+	* \brief encrypt
+	* \param message					Message, that should be decrypted and verified
+	* \param data						Data, that should be verified but not decrypted
+	* \return							Decrypted message
+	*/
 	QByteArray decrypt(const QByteArray & message, const QByteArray & data);
 
+	/*!
+	* \brief getKeyEncUses
+	* \return							Number of times the current key was used to encrypt a message
+	*/
 	size_t getKeyEncUses() const { return key_enc_uses; };
 
+	/*!
+	* \brief getKeyDecUses
+	* \return							Number of times the current key was used to decrypt a message
+	*/
 	size_t getKeyDecUses() const { return key_dec_uses; };
 
+	/*!
+	* \brief isMyDHCreated
+	* \return                          true, if client diffie-hellman was already created for the next key, false otherwise
+	*/
 	bool isMyDHCreated() const { return my; };
 
+	/*!
+	* \brief isMyDHCreated
+	* \return                          true, if partner diffie-hellman was already recieved for the next key, false otherwise
+	*/
 	bool isOtherDHRecieved() const { return other; };
 
+	/*!
+	* \brief generateKey				Generates new key
+	* \return							true if successfull, false if missing diffie-helman part
+	*/
 	bool generateKey();
 };
 
