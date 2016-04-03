@@ -140,7 +140,8 @@ public:
 };
 
 class SessionKey {
-	mbedtls_entropy_context * entropy;
+	mbedtls_entropy_context* entropy;
+	mbedtls_ctr_drbg_context random;
 	mbedtls_dhm_context dhmc;
 	mbedtls_gcm_context gcmc;
 
@@ -158,11 +159,16 @@ public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
 		mbedtls_gcm_init(&gcmc);
 		mbedtls_dhm_init(&dhmc);
+
+		const char *personalization = "]76kXV-$P?0qdQtfpkTPUSvWcq&(dyub";
+		mbedtls_ctr_drbg_init(&random);
+		mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, &entropy, (const unsigned char *)personalization, strlen(personalization));
 	};
 	SessionKey(const SessionKey &) = delete;
 	~SessionKey() {
 		mbedtls_gcm_free(&gcmc);
 		mbedtls_dhm_free(&dhmc);
+		mbedtls_ctr_drbg_free(&random);
 	};
 
 	SessionKey & operator=(const SessionKey &) = delete;

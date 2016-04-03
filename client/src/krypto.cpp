@@ -83,7 +83,7 @@ void SessionKey::setDH(QByteArray dh) {
 QByteArray SessionKey::getDH() {
 	size_t len = dhmc.len;
 	unsigned char * dhm = new unsigned char[len];
-	if (mbedtls_dhm_make_public(&dhmc, ENCRYPTION_KEY_SIZE, dhm, len, nullptr, nullptr)) throw KryptoException("getDH: can't generate public dh.");
+	if (mbedtls_dhm_make_public(&dhmc, ENCRYPTION_KEY_SIZE, dhm, len, mbedtls_ctr_drbg_random, &random)) throw KryptoException("getDH: can't generate public dh.");
 	QByteArray ret = QByteArray(reinterpret_cast<const char *>(dhm), len);
 	delete dhm;
 	my = true;
@@ -97,13 +97,7 @@ QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & da
 
 	unsigned char iv[16], tag[TAG_LENGTH];
 	unsigned char * output = new unsigned char[message.length()];
-
-	mbedtls_ctr_drbg_context ctr_drbg;
-	const char *personalization = "]76kXV-$P?0qdQtfpkTPUSvWcq&(dyub";
-	mbedtls_ctr_drbg_init(&ctr_drbg);
-	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)personalization, strlen(personalization));
-	mbedtls_ctr_drbg_random(&ctr_drbg, iv, 16);
-	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_ctr_drbg_random(&random, iv, 16);
 
 	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), output, TAG_LENGTH, tag);
@@ -143,7 +137,7 @@ void SessionKey::generateKey() {
 	
 	unsigned char key[ENCRYPTION_KEY_SIZE];
 	size_t olen;
-	if (mbedtls_dhm_calc_secret(&dhmc, key, ENCRYPTION_KEY_SIZE, &olen, nullptr, nullptr)) throw KryptoException("generateKey: Can't calculate secret.");
+	if (mbedtls_dhm_calc_secret(&dhmc, key, ENCRYPTION_KEY_SIZE, &olen, mbedtls_ctr_drbg_random, &random)) throw KryptoException("generateKey: Can't calculate secret.");
 	currentkey.setRawData(reinterpret_cast<const char *>(key), olen);
 	my = other = false;
 	key_enc_uses = key_dec_uses = 0;
