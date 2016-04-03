@@ -13,6 +13,33 @@
 
 
 
+class Session {
+	SessionKey key;
+	QString myName;
+	QString otherName;
+public:
+	Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
+
+	/*!
+	* \brief getMyName
+	* \return                          Returns client name
+	*/
+	const QString & getMyName() const { return myName; };
+
+	/*!
+	* \brief getPartnerName
+	* \return                          Returns partners name
+	*/
+	const QString & getPartnerName() const { return otherName; };
+
+	/*!
+	* \brief getKey
+	* \return                          Returns SessionKey of the session
+	*/
+	SessionKey & getKey() { return key; };
+};
+
+
 class Messages : public QObject
 {
     Q_OBJECT
@@ -114,35 +141,6 @@ private:
     QList<FileChunkDecrypted*> mUnorderedFileBlocks;
 
 
-};
-
-
-
-
-class Session {
-	SessionKey key;
-	QString myName;
-	QString otherName;
-public:
-	Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
-
-	/*!
-	* \brief getMyName
-	* \return                          Returns client name
-	*/
-	const QString & getMyName() const { return myName; };
-
-	/*!
-	* \brief getPartnerName
-	* \return                          Returns partners name
-	*/
-	const QString & getPartnerName() const { return otherName; };
-
-	/*!
-	* \brief getKey
-	* \return                          Returns SessionKey of the session
-	*/
-	SessionKey & getKey() { return key; };
 };
 
 #endif // MESSAGES_H
