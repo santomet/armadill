@@ -10,6 +10,8 @@
 #include "../include/mbedtls/sha512.h"
 #include "../include/mbedtls/gcm.h"
 #include "../include/mbedtls/asn1.h"
+#include "../include/mbedtls/entropy.h"
+#include "../include/mbedtls/ctr_drbg.h"
 
 class Krypto    : public QObject
 {
@@ -134,6 +136,7 @@ public:
 };
 
 class SessionKey {
+	mbedtls_entropy_context * entropy;
 	mbedtls_dhm_context dhmc;
 	mbedtls_gcm_context gcmc;
 
@@ -145,7 +148,7 @@ class SessionKey {
 
 	void generateKey();
 public:
-	SessionKey() : my(false), other(false) {
+	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
 		mbedtls_gcm_init(&gcmc);
 		mbedtls_dhm_init(&dhmc);
 	};
@@ -155,11 +158,15 @@ public:
 		mbedtls_dhm_free(&dhmc);
 	};
 
+	SessionKey & operator=(const SessionKey &) = delete;
+
 	void setDH(QByteArray dh);
 
 	QByteArray getDH();
 
 	QByteArray encrypt(const QByteArray & message, const QByteArray & data);
+
+	QByteArray decrypt(const QByteArray & message, const QByteArray & data);
 };
 
 #endif // KRYPTO_H

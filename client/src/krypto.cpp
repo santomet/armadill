@@ -94,11 +94,25 @@ QByteArray SessionKey::getDH() {
 QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & data) {
 	unsigned char iv[16], tag[TAG_LENGTH];
 	unsigned char * output = new unsigned char[message.length()];
+
+	mbedtls_ctr_drbg_context ctr_drbg;
+	const char *personalization = "]76kXV-$P?0qdQtfpkTPUSvWcq&(dyub";
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)personalization, strlen(personalization));
+	mbedtls_ctr_drbg_random(&ctr_drbg, iv, 16);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+
 	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), output, TAG_LENGTH, tag);
-	QByteArray ret(reinterpret_cast<const char *>(output), message.length());
+	QByteArray ret(reinterpret_cast<const char *>(iv), 16);
+	ret.append(reinterpret_cast<const char *>(tag), TAG_LENGTH);
+	ret.append(reinterpret_cast<const char *>(output), message.length());
 	delete output;
 	return ret;
+}
+
+QByteArray SessionKey::decrypt(const QByteArray & message, const QByteArray & data) {
+	return QByteArray();
 }
 
 
