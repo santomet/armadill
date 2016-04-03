@@ -19,6 +19,9 @@ std::string PasswordManager::hash(const char *password) {
 	mbedtls_ctr_drbg_random(&ctr_drbg, salt, 16);
 	mbedtls_pkcs5_pbkdf2_hmac(&ctx, reinterpret_cast<const unsigned char *>(password), strlen(password), salt, 16, 1000, 64, pass);
 
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_md_free(&ctx);
+
 	size_t len;
 	char enc[128];
 	mbedtls_base64_encode(reinterpret_cast<unsigned char *>(enc), 128, &len, salt, 16);
@@ -55,6 +58,8 @@ bool PasswordManager::verify(const char *password, const char *hash) const {
 	mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
 
 	mbedtls_pkcs5_pbkdf2_hmac(&ctx, reinterpret_cast<const unsigned char *>(password), strlen(password), salt, 16, 1000, 64, ipass);
+	mbedtls_md_free(&ctx);
+
 	return memcmp(ipass, pass, 64) == 0;
 }
 
