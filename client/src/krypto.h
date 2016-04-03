@@ -8,6 +8,8 @@
 #include "../include/mbedtls/x509.h"
 #include "../include/mbedtls/x509_csr.h"
 #include "../include/mbedtls/sha512.h"
+#include "../include/mbedtls/gcm.h"
+#include "../include/mbedtls/asn1.h"
 
 class Krypto    : public QObject
 {
@@ -105,7 +107,7 @@ public:
      * \param pass              password
      * \return                  salted hash
      */
-    QString saltHash(QString pass);
+    //QString saltHash(QString pass);
 
 //--------------------------------PRIVATE--------------------------------------------------
 private:
@@ -121,6 +123,43 @@ private:
 
     mbedtls_dhm_context mDHMContext;
 
+};
+
+
+
+class KryptoException : public std::runtime_error {
+
+public:
+	KryptoException(const char * msg) : runtime_error(msg) {};
+};
+
+class SessionKey {
+	mbedtls_dhm_context dhmc;
+	mbedtls_gcm_context gcmc;
+
+	QByteArray oldkey;
+	QByteArray currentkey;
+
+	bool my;
+	bool other;
+
+	void generateKey();
+public:
+	SessionKey() : my(false), other(false) {
+		mbedtls_gcm_init(&gcmc);
+		mbedtls_dhm_init(&dhmc);
+	};
+	SessionKey(const SessionKey &) = delete;
+	~SessionKey() {
+		mbedtls_gcm_free(&gcmc);
+		mbedtls_dhm_free(&dhmc);
+	};
+
+	void setDH(QByteArray dh);
+
+	QByteArray getDH();
+
+	QByteArray encrypt(const QByteArray & message, const QByteArray & data);
 };
 
 #endif // KRYPTO_H
