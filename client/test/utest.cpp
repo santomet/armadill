@@ -25,9 +25,10 @@ TEST_CASE( "Creating message", "[message]" )
     Messages m(nullptr, 0);
     QString sprava("TESTOVACIA SPRAVA");
 
-
-
     QByteArray encrypted = m.createRegularMessage(s, sprava);
+
+	qDebug() << "PROTECTED: " << encrypted;
+
     Messages::ReceivedMessage received;
     m.parseMessage(s2, encrypted, received);
     QString receivedString(received.messageText);

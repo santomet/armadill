@@ -143,14 +143,16 @@ public:
 		mbedtls_gcm_init(&gcmc);
 		mbedtls_dhm_init(&dhmc);
         //TODO set dhm_context here
-        uchar out[512];
+        uchar out[2048];
         size_t len;
 
 		const char *personalization = "]76kXV-$P?0qdQtfpkTPUSvWcq&(dyub";
 		mbedtls_ctr_drbg_init(&random);
-		mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, &entropy, (const unsigned char *)personalization, strlen(personalization));
+		mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, entropy, (const unsigned char *)personalization, strlen(personalization));
 
 
+		mbedtls_mpi_read_string(&dhmc.P, 16, "C5577A1DD79D0ADFE26D012F976778B069180AD0D704C61BBF23435838EE899D700B11A15713B8C09639DABF8DC1EC36F34AF3C2ECEB45BF5E0DA2C1E9DC04CAF0612F5128AA21B0306EDFE311D42999E17B54C7BA0FBDC3B46316D5CA592ED22AB934D21234D2E475F225D1F91AE0C32DDBFA0D468F43399E19E557D6F62B8A1EC66BE73C1F889422576B9CE34F3F02D2A4809D0AE48C46A2B92DBB47C97DC20085EB34BBD20F803E30689CBE4A83D9D6D215DE645CD984763C5B3FE098CEF3914CF0987C17D20749B6E996BA3DFB66340681B3B4369AB746F29E76277DDB93D17F0BC8F409369F9B370C71FDCE2ADCB8B6433A3DED4FAF13B91683D04005B3");
+		mbedtls_mpi_read_string(&dhmc.G, 16, "04");
 
         mbedtls_dhm_make_params(&dhmc, 256, out, &len, mbedtls_ctr_drbg_random, &random);
     };

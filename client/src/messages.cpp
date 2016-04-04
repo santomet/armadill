@@ -18,7 +18,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	ret.append(Messages::armaSeparator);
 	ret.append(session.getPartnerName());
 	ret.append(Messages::armaSeparator);
-	ret.append(QDateTime::currentMSecsSinceEpoch());
+	ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
 	ret.append(Messages::armaSeparator);
 	
 	if (!key.isMyDHCreated()) {
