@@ -14,9 +14,9 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	ArmaMessage ret;
 	SessionKey & key = session.getKey();
 	
-	ret.append(session.getMyName());
+	ret.append(session.getMyName().toUtf8().toBase64());
 	ret.append(Messages::armaSeparator);
-	ret.append(session.getPartnerName());
+	ret.append(session.getPartnerName().toUtf8().toBase64());
 	ret.append(Messages::armaSeparator);
 	ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
 	ret.append(Messages::armaSeparator);
