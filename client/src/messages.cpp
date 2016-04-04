@@ -98,7 +98,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		}
 		
 		SessionKey& sk = session.getKey();
-		sk.setDH(dh);
+		
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
 		try {
@@ -107,6 +107,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		catch (KryptoException e) {
 			return false;
 		}
+		sk.setDH(dh);
 		parsedMessage.messageText = messageText;
 	}
 
