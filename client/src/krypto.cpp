@@ -31,16 +31,16 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 	++key_enc_uses;
 
 	unsigned char iv[16], tag[TAG_LENGTH];
-	unsigned char * output = new unsigned char[message.length()];
 	mbedtls_ctr_drbg_random(&random, iv, 16);
 
-	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
-	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), output, TAG_LENGTH, tag);
 	QByteArray ret(1, keyid);
-	ret.append(reinterpret_cast<const char *>(iv), 16);
-	ret.append(reinterpret_cast<const char *>(tag), TAG_LENGTH);
-	ret.append(reinterpret_cast<const char *>(output), message.length());
-	delete[] output;
+	ret.resize(17 + TAG_LENGTH + message.length()); // 1 for keyid + 16 for IV + tag + message
+	ret.replace(1, 16, reinterpret_cast<const char *>(iv), 16);
+
+	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
+	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), reinterpret_cast<uchar *>(ret.data()), TAG_LENGTH, tag);
+	
+	ret.replace(17, TAG_LENGTH, reinterpret_cast<const char *>(tag), TAG_LENGTH);
 	return ret;
 }
 
