@@ -170,20 +170,20 @@ public:
 	QByteArray getDH();
 
 	/*!
-	* \brief encrypt
+	* \brief protect
 	* \param message					Message, that should be encrypted and signed
 	* \param data						Data, that should be signed but not encrypted
 	* \return							Payload, to be sent to partner
 	*/
-	QByteArray encrypt(const QByteArray & message, const QByteArray & data);
+	QByteArray protect(const QByteArray & message, const QByteArray & data);
 
 	/*!
-	* \brief encrypt
+	* \brief unprotect
 	* \param message					Message, that should be decrypted and verified
 	* \param data						Data, that should be verified but not decrypted
 	* \return							Decrypted message
 	*/
-	QByteArray decrypt(const QByteArray & message, const QByteArray & data);
+	QByteArray unprotect(const QByteArray & message, const QByteArray & data);
 
 	/*!
 	* \brief getKeyEncUses

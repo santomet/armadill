@@ -26,7 +26,7 @@ QByteArray SessionKey::getDH() {
 	return ret;
 }
 
-QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & data) {
+QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & data) {
 	if (key_enc_uses >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 encryptions.");
 	++key_enc_uses;
 
@@ -44,7 +44,7 @@ QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & da
 	return ret;
 }
 
-QByteArray SessionKey::decrypt(const QByteArray & message, const QByteArray & data) {
+QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & data) {
 	size_t dataLength = message.length() - 16 - TAG_LENGTH - 1; // iv + tag + keyId
 	unsigned char messageKeyId;
 	unsigned char iv[16], tag[TAG_LENGTH];

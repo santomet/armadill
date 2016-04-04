@@ -31,7 +31,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	}
 	ret.append(Messages::armaSeparator);
 
-	ret.append(key.encrypt(message.toUtf8(), ret));
+	ret.append(key.protect(message.toUtf8(), ret));
 
 	key.generateKey();
 	return ret;
@@ -77,7 +77,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		SessionKey& sk = session.getKey();
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
 		try{
-			messageText = sk.decrypt(encryptedData, message.left(contextDataLength));
+			messageText = sk.unprotect(encryptedData, message.left(contextDataLength));
 		}
 		catch (KryptoException e) {
 			return false;
@@ -102,7 +102,7 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
 		try {
-			messageText = sk.decrypt(encryptedData, message.left(contextDataLength));
+			messageText = sk.unprotect(encryptedData, message.left(contextDataLength));
 		}
 		catch (KryptoException e) {
 			return false;
