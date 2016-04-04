@@ -49,18 +49,18 @@ bool PasswordManager::verify(const char *password, const char *hash) const {
 				break;
 			}
 		}
+
+		unsigned char ipass[64];
+		mbedtls_md_context_t ctx;
+		mbedtls_md_init(&ctx);
+		mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
+
+		mbedtls_pkcs5_pbkdf2_hmac(&ctx, reinterpret_cast<const unsigned char *>(password), strlen(password), salt, 16, 1000, 64, ipass);
+		mbedtls_md_free(&ctx);
+
+		return memcmp(ipass, pass, 64) == 0;
 	}
-
-
-	unsigned char ipass[64];
-	mbedtls_md_context_t ctx;
-	mbedtls_md_init(&ctx);
-	mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-
-	mbedtls_pkcs5_pbkdf2_hmac(&ctx, reinterpret_cast<const unsigned char *>(password), strlen(password), salt, 16, 1000, 64, ipass);
-	mbedtls_md_free(&ctx);
-
-	return memcmp(ipass, pass, 64) == 0;
+	return false;
 }
 
 
