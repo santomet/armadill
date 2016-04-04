@@ -44,7 +44,7 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	return ret;
 }
 
-bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
+bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
 	QByteArray senderNick, receiverNick, dh;
 	QDateTime timestamp;
 	short type;

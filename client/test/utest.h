@@ -5,15 +5,11 @@
 #include <QtTest/QTest>
 #include "../src/clientconsole.h"
 
-class UTest : public QObject
+class UTest
 {
-    Q_OBJECT
 public:
-    explicit UTest(QObject *parent = 0);
-
-signals:
-
-public slots:
+    UTest();
+    int makeTests(int argc, char *argv[]);
 };
 
 #endif // UTEST_H

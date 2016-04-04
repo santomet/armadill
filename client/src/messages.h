@@ -13,9 +13,9 @@
 
 
 class Session {
-	SessionKey key;
 	QString myName;
 	QString otherName;
+    SessionKey key;
 public:
 	Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
 
@@ -44,8 +44,6 @@ class Messages : public QObject
     Q_OBJECT
 public:
     const char armaSeparator = '#';
-
-    explicit Messages(QObject *parent = 0);
 
 
 //-----------------------------Structures and types-------------------------------------
@@ -102,7 +100,7 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    bool parseMessage(Session & session, const ArmaMessage &message, ReceivedMessage & receivedMessage);
+    bool parseMessage(Session & session, ArmaMessage &message, ReceivedMessage & receivedMessage);
 
     /*!
      * \brief createRegularMessage      Creates regular ArmaMessage that will be ready to send
@@ -118,7 +116,7 @@ public:
 	* \param password					password for client name
 	* \return							ArmaMessage which can be sent to server
 	*/
-	ArmaMessage createLoginMessage(QString & name, const QString & password);
+    ArmaMessage createLoginMessage(QString & name, const QString & password);
 
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger

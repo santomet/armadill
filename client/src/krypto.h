@@ -142,11 +142,18 @@ public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
 		mbedtls_gcm_init(&gcmc);
 		mbedtls_dhm_init(&dhmc);
+        //TODO set dhm_context here
+        uchar out[512];
+        size_t len;
 
 		const char *personalization = "]76kXV-$P?0qdQtfpkTPUSvWcq&(dyub";
 		mbedtls_ctr_drbg_init(&random);
 		mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, &entropy, (const unsigned char *)personalization, strlen(personalization));
-	};
+
+
+
+        mbedtls_dhm_make_params(&dhmc, 256, out, &len, mbedtls_ctr_drbg_random, &random);
+    };
 	SessionKey(const SessionKey &) = delete;
 	~SessionKey() {
 		mbedtls_gcm_free(&gcmc);

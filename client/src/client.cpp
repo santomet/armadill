@@ -19,12 +19,6 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
 
     QCommandLineOption test(QStringList() << "t" << "test", "Run tests");
-//    QCommandLineOption decrypt(QStringList() << "d" << "decrypt", "Decrypt and verify hash");
-//    QCommandLineOption encrypt(QStringList() << "e" << "encrypt", "Encrypt and make hash");
-//    QCommandLineOption hash(QStringList() << "s" << "hash", "Hash to verify","hash");
-//    parser.addOption(encrypt);
-//    parser.addOption(decrypt);
-//    parser.addOption(key);
     parser.addOption(test);
 
     parser.process(a);
@@ -32,7 +26,8 @@ int main(int argc, char *argv[])
     //parse things, run test if test
     if(parser.isSet(test))
     {
-        UTest nt(&a);
+        UTest test;
+        return test.makeTests(argc, argv);
     }
     else
     {
