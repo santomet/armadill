@@ -31,7 +31,6 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 	++key_enc_uses;
 
 	unsigned char iv[16], tag[TAG_LENGTH];
-	unsigned char * output = new unsigned char[message.length()];
 	mbedtls_ctr_drbg_random(&random, iv, 16);
 
 	QByteArray ret(1, keyid);
@@ -75,6 +74,15 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 
 	return ret;
 }
+
+
+
+
+
+
+
+
+
 
 
 
