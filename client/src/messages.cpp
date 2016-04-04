@@ -68,7 +68,9 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 	if (type == RegularMessage) {
 		
 		//in case of separator occurence in data
-		for (int i = 4; i < list.size(); i++) {
+		encryptedData.append(list[4]);
+		for (int i = 5; i < list.size(); i++) {
+			encryptedData.append(armaSeparator);
 			encryptedData.append(list[i]);
 		}
 		
@@ -89,7 +91,9 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 		dh = list[4];
 
 		//in case of separator occurence in data
-		for (int i = 5; i < list.size(); i++) {
+		encryptedData.append(list[5]);
+		for (int i = 6; i < list.size(); i++) {
+			encryptedData.append(armaSeparator);
 			encryptedData.append(list[i]);
 		}
 		
