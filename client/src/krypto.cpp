@@ -21,7 +21,7 @@ QByteArray SessionKey::getDH() {
 	unsigned char * dhm = new unsigned char[len];
 	if (mbedtls_dhm_make_public(&dhmc, ENCRYPTION_KEY_SIZE, dhm, len, mbedtls_ctr_drbg_random, &random)) throw KryptoException("getDH: can't generate public dh.");
 	QByteArray ret = QByteArray(reinterpret_cast<const char *>(dhm), len);
-	delete dhm;
+	delete[] dhm;
 	my = true;
 	return ret;
 }
@@ -40,7 +40,7 @@ QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & da
 	ret.append(reinterpret_cast<const char *>(iv), 16);
 	ret.append(reinterpret_cast<const char *>(tag), TAG_LENGTH);
 	ret.append(reinterpret_cast<const char *>(output), message.length());
-	delete output;
+	delete[] output;
 	return ret;
 }
 
