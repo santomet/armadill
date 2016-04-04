@@ -50,7 +50,8 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 	short type;
 
 	QList<QByteArray> list = message.split(armaSeparator);
-	if (list.size() < 4) throw new MessageException("incomplete message");
+	
+	if (list.size() < 5) throw new MessageException("incomplete message");
 	//senderNick = list[0];
 	//receiverNick = list[1];
 
@@ -61,14 +62,20 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 	
 
 	QByteArray messageText;
+	QByteArray encryptedData;
 
 	//regularMessage
 	if (type == RegularMessage) {
-		if (list.size() != 5) throw new MessageException("incomplete message");
+		
+		//in case of separator occurence in data
+		for (int i = 4; i < list.size(); i++) {
+			encryptedData.append(list[i]);
+		}
+		
 		SessionKey& sk = session.getKey();
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
 		try{
-			messageText = sk.decrypt(list[4], message.left(contextDataLength));
+			messageText = sk.decrypt(encryptedData, message.left(contextDataLength));
 		}
 		catch (KryptoException e) {
 			return false;
@@ -78,14 +85,20 @@ bool Messages::parseMessage(Session &session, const ArmaMessage &message, Messag
 
 	//regularMessageDH
 	if (type == RegularMessageDH) {
-		if (list.size() != 6) throw new MessageException("incomplete message");
+		if (list.size() < 6) throw new MessageException("incomplete message");
 		dh = list[4];
+
+		//in case of separator occurence in data
+		for (int i = 5; i < list.size(); i++) {
+			encryptedData.append(list[i]);
+		}
+		
 		SessionKey& sk = session.getKey();
 		sk.setDH(dh);
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
 		try {
-			messageText = sk.decrypt(list[5], message.left(contextDataLength));
+			messageText = sk.decrypt(encryptedData, message.left(contextDataLength));
 		}
 		catch (KryptoException e) {
 			return false;

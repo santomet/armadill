@@ -104,7 +104,6 @@ QByteArray SessionKey::encrypt(const QByteArray & message, const QByteArray & da
 }
 
 QByteArray SessionKey::decrypt(const QByteArray & message, const QByteArray & data) {
-	++key_dec_uses;
 	size_t dataLength = message.length() - 16 - TAG_LENGTH - 1; // iv + tag + keyId
 	unsigned char messageKeyId;
 	unsigned char iv[16], tag[TAG_LENGTH];
