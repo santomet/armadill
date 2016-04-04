@@ -75,3 +75,4 @@ client/Win32/*
 server/Win32/*
 
 
+*.lastcodeanalysissucceeded

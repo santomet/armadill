@@ -92,22 +92,6 @@ public:
 
 //------------------------------AES---------------------------------------------
 
-    /*!
-     * \brief encryptMessage    Encrypts message with AES256
-     * \param toEncrypt         Message/Data which are going to be encrypted
-     * \param encrypted         This will contain (Initialization Vector || Encrypted data || size of original data)
-     * \param key               256b Key which will be used for encryption
-     * \param originalsize      Original size of data (You can use size method from QByteArray)
-     */
-    void encryptMessage(const QByteArray &toEncrypt, QByteArray &encrypted, const unsigned char *key, size_t originalsize);
-
-    /*!
-     * \brief decryptMessage    Decrypts message with AES256
-     * \param toDecrypt         Data to decrypt (skould be (Initialization Vector || Encrypted data || size of original data))
-     * \param decrypted         Pure decrypted data with origianl size
-     * \param key               256b Key for decryption
-     */
-    void decryptMessage(const QByteArray &toDecrypt, QByteArray &decrypted, const unsigned char *key);
 //----------------------------------------------------------------------------------------
 //-----------------------PASSWORDS--------------------------------------------------------
     /*!
@@ -119,13 +103,6 @@ public:
 
 //--------------------------------PRIVATE--------------------------------------------------
 private:
-    /*!
-     * \brief hash              Calculates SHA512 of any given data
-     * \param chunks            data
-     * \return                  hash in base64 format
-     */
-    QString hash(QByteArray &chunks);
-
 
 //--------------------------------------------------------------------------------------
 
