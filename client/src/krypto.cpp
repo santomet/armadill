@@ -45,16 +45,11 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 }
 
 QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & data) {
+	//message = keyId(1)/iv(16)/tag(TAG_LENGTH)/encData
 	size_t dataLength = message.length() - 16 - TAG_LENGTH - 1; // iv + tag + keyId
-	unsigned char messageKeyId;
-	unsigned char iv[16], tag[TAG_LENGTH];
-	unsigned char * input = new unsigned char[dataLength];
+	unsigned char messageKeyId = message[0];
 	unsigned char * output = new unsigned char[dataLength];
-	messageKeyId = message[0];
-	qstrncpy(reinterpret_cast<char * >(iv), message.data() + 1, 16);
-	qstrncpy(reinterpret_cast<char * >(tag), message.data() + 16 + 1, TAG_LENGTH);
-	qstrncpy(reinterpret_cast<char * >(input), message.data() + 16 + TAG_LENGTH + 1, dataLength);
-
+	
 	if (messageKeyId == keyid) {
 		mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 		++key_dec_uses;
@@ -66,12 +61,12 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 		throw KryptoException("key is too old");
 	}
 
-	if (mbedtls_gcm_auth_decrypt(&gcmc, dataLength, iv, 16, toUChar(data), data.length(), tag, TAG_LENGTH, input, output) == MBEDTLS_ERR_GCM_AUTH_FAILED) {
+	if (mbedtls_gcm_auth_decrypt(&gcmc, dataLength, toUChar(message)+1, 16, toUChar(data), data.length(), toUChar(message)+17, TAG_LENGTH, toUChar(message)+17+TAG_LENGTH, output) == MBEDTLS_ERR_GCM_AUTH_FAILED) {
 		throw KryptoException("Authentication of message failed");
 	}
 
 	QByteArray ret(reinterpret_cast<const char *> (output), dataLength);
-
+	delete[] output;
 	return ret;
 }
 
