@@ -47,7 +47,7 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
 	QByteArray senderNick, receiverNick, dh;
 	QDateTime timestamp;
-	short type;
+	char type;
 
 	QList<QByteArray> list = message.split(armaSeparator);
 	
@@ -58,7 +58,7 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 	timestamp.setMSecsSinceEpoch(list[2].toLongLong());
 	parsedMessage.timestamp = timestamp;
 	
-	type = list[3].toShort();
+	type = list[3][0] - 'A';
 	
 
 	QByteArray messageText;
@@ -88,7 +88,7 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 	//regularMessageDH
 	if (type == RegularMessageDH) {
 		if (list.size() < 6) throw new MessageException("incomplete message");
-		dh = list[4];
+		dh = QByteArray::fromBase64(list[4]);
 
 		//in case of separator occurence in data
 		encryptedData.append(list[5]);
