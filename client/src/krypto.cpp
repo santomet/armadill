@@ -38,7 +38,7 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 	ret.replace(1, 16, reinterpret_cast<const char *>(iv), 16);
 
 	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
-	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), reinterpret_cast<uchar *>(ret.data()), TAG_LENGTH, tag);
+	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), reinterpret_cast<uchar *>(ret.data() + 17 + TAG_LENGTH), TAG_LENGTH, tag);
 	
 	ret.replace(17, TAG_LENGTH, reinterpret_cast<const char *>(tag), TAG_LENGTH);
 	return ret;
