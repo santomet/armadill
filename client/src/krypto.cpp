@@ -61,8 +61,11 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 		throw KryptoException("key is too old");
 	}
 
-	if (mbedtls_gcm_auth_decrypt(&gcmc, dataLength, toUChar(message)+1, 16, toUChar(data), data.length(), toUChar(message)+17, TAG_LENGTH, toUChar(message)+17+TAG_LENGTH, output) == MBEDTLS_ERR_GCM_AUTH_FAILED) {
-		throw KryptoException("Authentication of message failed");
+	int ret_success;
+	if ((ret_success = mbedtls_gcm_auth_decrypt(&gcmc, dataLength, toUChar(message)+1, 16, toUChar(data), data.length(), toUChar(message)+17, TAG_LENGTH, toUChar(message)+17+TAG_LENGTH, output))) {
+		if(ret_success == MBEDTLS_ERR_GCM_AUTH_FAILED)		throw KryptoException("Authentication of message failed");
+		else if(ret_success == MBEDTLS_ERR_GCM_BAD_INPUT)	throw KryptoException("Bad message data for unprotect");
+		else												throw KryptoException("Unknown Error");
 	}
 
 	QByteArray ret(reinterpret_cast<const char *> (output), dataLength);
