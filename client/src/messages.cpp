@@ -102,7 +102,9 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
 		try {
-			messageText = sk.unprotect(encryptedData, message.left(contextDataLength));
+			QByteArray a1 = message.left(contextDataLength);
+			QByteArray a2 = message.right(message.length() - contextDataLength);
+			messageText = sk.unprotect(a2, a1);
 		}
 		catch (KryptoException e) {
 			return false;
