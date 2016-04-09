@@ -38,8 +38,9 @@ TEST_CASE( "Creating message", "[message]" )
 
 	REQUIRE(valid);
 
-	QString receivedString;
-	receivedString.fromUtf8(received.messageText);
+	qDebug() << "Raw unprotected = " << received.messageText;
+
+	QString receivedString = QString::fromUtf8(received.messageText);
 
 	qDebug() << "UNPROTECTED: " << receivedString;
 
