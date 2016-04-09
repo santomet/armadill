@@ -23,6 +23,9 @@ TEST_CASE( "Creating message", "[message]" )
 	s.getKey().generateKey();
 	s2.getKey().generateKey();
 
+	bool same = s.getKey().getSharedKey() == s2.getKey().getSharedKey();
+	REQUIRE(same);
+
     Messages m(nullptr, 0);
     QString sprava("TESTOVACIA SPRAVA");
 
@@ -31,8 +34,12 @@ TEST_CASE( "Creating message", "[message]" )
 	qDebug() << "PROTECTED:   " << encrypted;
 
     Messages::ReceivedMessage received;
-    m.parseMessage(s2, encrypted, received);
-    QString receivedString(received.messageText);
+    bool valid = m.parseMessage(s2, encrypted, received);
+
+	REQUIRE(valid);
+
+	QString receivedString;
+	receivedString.fromUtf8(received.messageText);
 
 	qDebug() << "UNPROTECTED: " << receivedString;
 

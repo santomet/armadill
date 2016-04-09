@@ -223,6 +223,10 @@ public:
 	* \return							true if successfull, false if missing diffie-helman part
 	*/
 	bool generateKey();
+
+
+
+	const QByteArray & getSharedKey() const { return currentkey; };
 };
 
 #endif // KRYPTO_H
