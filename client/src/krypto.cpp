@@ -97,10 +97,9 @@ bool SessionKey::generateKey() {
 	oldkey = currentkey;
 	++keyid;
 	
-	unsigned char key[ENCRYPTION_KEY_SIZE];
 	size_t olen;
-	if (mbedtls_dhm_calc_secret(&dhmc, key, ENCRYPTION_KEY_SIZE, &olen, mbedtls_ctr_drbg_random, &random)) throw KryptoException("generateKey: Can't calculate secret.");
-	currentkey.setRawData(reinterpret_cast<const char *>(key), olen);
+	currentkey.resize(ENCRYPTION_KEY_SIZE);
+	if (mbedtls_dhm_calc_secret(&dhmc, reinterpret_cast<unsigned char *>(currentkey.data()), ENCRYPTION_KEY_SIZE, &olen, mbedtls_ctr_drbg_random, &random)) throw KryptoException("generateKey: Can't calculate secret.");
 	my = other = false;
 	key_enc_uses = key_dec_uses = 0;
 	return true;
