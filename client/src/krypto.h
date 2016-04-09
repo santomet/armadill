@@ -16,6 +16,7 @@
 
 #define ENCRYPTION_KEY_SIZE 256
 #define TAG_LENGTH	16
+#define IV_LENGTH	12
 #define MAX_MESSAGES_WITH_ONE_KEY 10
 
 
@@ -126,7 +127,6 @@ class SessionKey {
 	mbedtls_entropy_context* entropy;
 	mbedtls_ctr_drbg_context random;
 	mbedtls_dhm_context dhmc;
-	mbedtls_gcm_context gcmc;
 
 	unsigned char keyid = 0;
 	QByteArray oldkey;
@@ -140,7 +140,6 @@ class SessionKey {
 
 public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
-		mbedtls_gcm_init(&gcmc);
 		mbedtls_dhm_init(&dhmc);
         //TODO set dhm_context here
         uchar out[2048];
@@ -158,7 +157,6 @@ public:
     };
 	SessionKey(const SessionKey &) = delete;
 	~SessionKey() {
-		mbedtls_gcm_free(&gcmc);
 		mbedtls_dhm_free(&dhmc);
 		mbedtls_ctr_drbg_free(&random);
 	};

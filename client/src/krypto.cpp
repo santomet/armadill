@@ -30,39 +30,46 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 	if (key_enc_uses >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 encryptions.");
 	++key_enc_uses;
 
-	unsigned char iv[16], tag[TAG_LENGTH];
-	mbedtls_ctr_drbg_random(&random, iv, 16);
+	unsigned char iv[IV_LENGTH], tag[TAG_LENGTH];
+	mbedtls_ctr_drbg_random(&random, iv, IV_LENGTH);
 
 	QByteArray ret(1, keyid);
-	ret.resize(17 + TAG_LENGTH + message.length()); // 1 for keyid + 16 for IV + tag + message
-	ret.replace(1, 16, reinterpret_cast<const char *>(iv), 16);
+	ret.resize(1 + IV_LENGTH + TAG_LENGTH + message.length()); // 1 for keyid + IV + tag + message
+	ret.replace(1, IV_LENGTH, reinterpret_cast<const char *>(iv), IV_LENGTH);
 
-	mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
-	mbedtls_gcm_crypt_and_tag(&gcmc, MBEDTLS_GCM_ENCRYPT, message.length(), iv, 16, toUChar(data), data.length(), toUChar(message), reinterpret_cast<uchar *>(ret.data() + 17 + TAG_LENGTH), TAG_LENGTH, tag);
+	mbedtls_gcm_context ctx;
+	mbedtls_gcm_init(&ctx);
+	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
+	mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, message.length(), iv, IV_LENGTH, toUChar(data), data.length(), toUChar(message), reinterpret_cast<uchar *>(ret.data() + 1 + IV_LENGTH + TAG_LENGTH), TAG_LENGTH, tag);
 	
-	ret.replace(17, TAG_LENGTH, reinterpret_cast<const char *>(tag), TAG_LENGTH);
+	ret.replace(1 + IV_LENGTH, TAG_LENGTH, reinterpret_cast<const char *>(tag), TAG_LENGTH);
+	mbedtls_gcm_free(&ctx);
 	return ret;
 }
 
 QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & data) {
 	//message = keyId(1)/iv(16)/tag(TAG_LENGTH)/encData
-	size_t dataLength = message.length() - 16 - TAG_LENGTH - 1; // iv + tag + keyId
+	size_t dataLength = message.length() - IV_LENGTH - TAG_LENGTH - 1; // iv + tag + keyId
 	unsigned char messageKeyId = message[0];
 	unsigned char * output = new unsigned char[dataLength];
 	
+	mbedtls_gcm_context ctx;
+	mbedtls_gcm_init(&ctx);
+
 	if (messageKeyId == keyid) {
-		mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
+		qDebug() << "Key Decrypt = " << currentkey.toHex() << endl;
+		mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 		++key_dec_uses;
 	}
 	else if (messageKeyId == keyid - 1) {
-		mbedtls_gcm_setkey(&gcmc, MBEDTLS_CIPHER_ID_AES, toUChar(oldkey), 256);
+		mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(oldkey), 256);
 	}
 	else {
 		throw KryptoException("key is too old");
 	}
 
 	int ret_success;
-	if ((ret_success = mbedtls_gcm_auth_decrypt(&gcmc, dataLength, toUChar(message)+1, 16, toUChar(data), data.length(), toUChar(message)+17, TAG_LENGTH, toUChar(message)+17+TAG_LENGTH, output))) {
+	if ((ret_success = mbedtls_gcm_auth_decrypt(&ctx, dataLength, toUChar(message) + 1, IV_LENGTH, toUChar(data), data.length(), toUChar(message) + 1 + IV_LENGTH, TAG_LENGTH, toUChar(message) + 1 + IV_LENGTH +TAG_LENGTH, output))) {
 		if(ret_success == MBEDTLS_ERR_GCM_AUTH_FAILED)		throw KryptoException("Authentication of message failed");
 		else if(ret_success == MBEDTLS_ERR_GCM_BAD_INPUT)	throw KryptoException("Bad message data for unprotect");
 		else												throw KryptoException("Unknown Error");
@@ -70,6 +77,7 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 
 	QByteArray ret(reinterpret_cast<const char *> (output), dataLength);
 	delete[] output;
+	mbedtls_gcm_free(&ctx);
 	return ret;
 }
 
