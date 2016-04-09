@@ -15,7 +15,7 @@
 
 
 #define ENCRYPTION_KEY_SIZE 256
-#define TAG_LENGTH	128
+#define TAG_LENGTH	16
 #define MAX_MESSAGES_WITH_ONE_KEY 10
 
 
