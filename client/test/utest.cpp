@@ -15,23 +15,26 @@ TEST_CASE( "Creating message", "[message]" )
     mbedtls_entropy_gather(&mtls_entropy);
 
     Session s("keket", "druhykeket", &mtls_entropy);
-    s.getKey().getDH();
 
     Session s2("druhykeket", "keket", &mtls_entropy);
 
     s.getKey().setDH(s2.getKey().getDH());
-    s.getKey().generateKey();
+    s2.getKey().setDH(s.getKey().getDH());
+	s.getKey().generateKey();
+	s2.getKey().generateKey();
 
     Messages m(nullptr, 0);
     QString sprava("TESTOVACIA SPRAVA");
 
     QByteArray encrypted = m.createRegularMessage(s, sprava);
 
-	qDebug() << "PROTECTED: " << encrypted;
+	qDebug() << "PROTECTED:   " << encrypted;
 
     Messages::ReceivedMessage received;
     m.parseMessage(s2, encrypted, received);
     QString receivedString(received.messageText);
+
+	qDebug() << "UNPROTECTED: " << receivedString;
 
     REQUIRE(receivedString == sprava);
 
