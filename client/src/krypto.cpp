@@ -57,7 +57,6 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 	mbedtls_gcm_init(&ctx);
 
 	if (messageKeyId == keyid) {
-		qDebug() << "Key Decrypt = " << currentkey.toHex() << endl;
 		mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 		++key_dec_uses;
 	}
