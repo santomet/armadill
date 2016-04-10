@@ -16,3 +16,4 @@ script:
   - qmake armadill.pro
   - make
   - ./server/armadill-server -t
+  - ./client/armadill -t
