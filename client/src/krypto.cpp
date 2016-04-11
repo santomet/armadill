@@ -57,10 +57,12 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 	mbedtls_gcm_init(&ctx);
 
 	if (messageKeyId == keyid) {
+		if (key_dec_uses >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 decryptions.");
 		mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
 		++key_dec_uses;
 	}
 	else if (messageKeyId == keyid - 1) {
+		if (key_old_dec_uses >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 decryptions.");
 		mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(oldkey), 256);
 	}
 	else {
@@ -108,6 +110,7 @@ bool SessionKey::generateKey() {
 	currentkey.resize(ENCRYPTION_KEY_SIZE);
 	if (mbedtls_dhm_calc_secret(&dhmc, reinterpret_cast<unsigned char *>(currentkey.data()), ENCRYPTION_KEY_SIZE, &olen, mbedtls_ctr_drbg_random, &random)) throw KryptoException("generateKey: Can't calculate secret.");
 	my = other = false;
+	key_old_dec_uses = key_dec_uses;
 	key_enc_uses = key_dec_uses = 0;
 	return true;
 }
