@@ -3,7 +3,7 @@
 #include "../../include/catch.hpp"
 #include <QDebug>
 #include <QFile>
-
+#include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -67,6 +67,60 @@ TEST_CASE("Log in user, getting JSON", "[user]")
     test.insert("users", testarray);
 
     REQUIRE((json == test));
+
+
+}
+
+
+
+TEST_CASE("Performance tests", "[perf]")
+{
+    ServerManager mngr("testdb.sql");
+
+    REQUIRE(mngr.login("keket", "heslo", "127.0.0.1", 666, "NO_CERT_YET"));
+
+    QJsonObject json;
+
+
+
+    clock_t start, end;
+    double spent;
+    QElapsedTimer timer;
+
+    timer.restart();
+    start = clock();
+    json = mngr.exportOnlineUsersJson();
+    end = clock();
+    spent = (end-start) / (double)(CLOCKS_PER_SEC/1000);
+    qDebug() << "getting list of users with three entries. CPU: " << spent << "ms, FULL: " << timer.elapsed() << "ms";
+
+    for(int i = 3;i<103;++i)
+    {
+        timer.restart();
+        start = clock();
+        REQUIRE(mngr.newRegistration(QString("keket" + QString::number(i)), "heslo"));
+        end = clock();
+        spent = (end-start) / (double)(CLOCKS_PER_SEC/1000);
+        qDebug() << "writing " << i << "th user. CPU: " << spent << "ms, FULL:" << timer.elapsed() << "ms";
+    }
+
+    for(int i = 3;i<103;++i)
+    {
+        timer.restart();
+        start = clock();
+        REQUIRE(mngr.login(QString("keket" + QString::number(i)), "heslo", "127.0.0.1", 666, "NO_CERT_YET"));
+        end = clock();
+        spent = (end-start) / (double)(CLOCKS_PER_SEC/1000);
+
+        qDebug() << "Logging in " << i << "th user. CPU: " << spent << "ms, FULL:" << timer.elapsed() << "ms";
+
+        json = mngr.exportOnlineUsersJson();
+        end = clock();
+        spent = (end-start) / (double)(CLOCKS_PER_SEC/1000);
+        qDebug() << "getting list of users. CPU: " << spent << "ms, FULL: " << timer.elapsed() << "ms";
+    }
+
+
 
 
 }
