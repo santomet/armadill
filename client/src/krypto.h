@@ -135,8 +135,9 @@ class SessionKey {
 	bool my;
 	bool other;
 
-	size_t key_enc_uses = 0;
-	size_t key_dec_uses = 0;
+	size_t key_enc_uses		= 0;
+	size_t key_dec_uses		= 0;
+	size_t key_old_dec_uses = 0;
 
 public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
