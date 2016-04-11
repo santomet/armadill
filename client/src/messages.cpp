@@ -12,7 +12,7 @@ Messages::~Messages()
 
 Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QString & message) {
 	ArmaMessage ret;
-	SessionKey & key = session.getKey();
+    SessionKey & key = session.getKey();
 	
 	ret.append(session.getMyName().toUtf8().toBase64());
 	ret.append(Messages::armaSeparator);
@@ -33,7 +33,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 
 	ret.append(key.protect(message.toUtf8(), ret));
 
-	key.generateKey();
+    key.generateKey();
 	return ret;
 }
 
@@ -45,60 +45,76 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 }
 
 bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
-	QByteArray senderNick, receiverNick, dh;
-	QDateTime timestamp;
-	char type;
-	
-	int separatorCount = message.count(armaSeparator);
-	if (separatorCount < 4) throw new MessageException("incomplete message");
-	int* position = new int[separatorCount]; // positions of separators # in sender#receiver#time#type#
-	
-	position[0] = message.indexOf(armaSeparator);
-	for (int i = 1; position[i-1] != -1; i++) {
-		position[i] = message.indexOf(armaSeparator, position[i - 1] + 1);
-	}
-	
-	senderNick = QByteArray::fromBase64(message.left(position[0]));
-	receiverNick = QByteArray::fromBase64(message.mid(position[0] + 1, position[1] - position[0] - 1));
-	timestamp.setMSecsSinceEpoch(message.mid(position[1] + 1, position[2] - position[1] - 1).toLongLong());
-	parsedMessage.timestamp = timestamp;
-	type = message[position[2] + 1] - 'A';
+    QByteArray senderNick, receiverNick, dh;
+    QDateTime timestamp;
+    char type;
 
-	QByteArray messageText;
-	
-	//regularMessage
-	if (type == RegularMessage) {
-		SessionKey& sk = session.getKey();
-		try{
-			messageText = sk.unprotect(message.mid(position[3] + 1), message.left(position[3] + 1));
-		}
-		catch (KryptoException e) {
-			return false;
-		}
-		parsedMessage.messageText = messageText;
-	}
+    QList<QByteArray> list = message.split(armaSeparator);
 
-	//regularMessageDH
-	if (type == RegularMessageDH) {
-		if (separatorCount < 5) throw new MessageException("incomplete message");
-		dh = QByteArray::fromBase64(message.mid(position[3] + 1, position[4] - position[3] - 1));
-	
-		SessionKey& sk = session.getKey();
+    if (list.size() < 5) throw new MessageException("incomplete message");
+    //senderNick = list[0];
+    //receiverNick = list[1];
 
-		try {
-			messageText = sk.unprotect(message.mid(position[4] + 1), message.left(position[4] + 1));
-		}
-		catch (KryptoException e) {
-			return false;
-		}
-		sk.setDH(dh);
-		parsedMessage.messageText = messageText;
-	}
+    timestamp.setMSecsSinceEpoch(list[2].toLongLong());
+    parsedMessage.timestamp = timestamp;
 
-	//fileTypes
+    type = list[3][0] - 'A';
 
-	//BUG: problem with dealocating memory
-	//delete[] position;
-	
-	return true;
+
+    QByteArray messageText;
+    QByteArray encryptedData;
+
+    //regularMessage
+    if (type == RegularMessage) {
+
+        //in case of separator occurence in data
+        encryptedData.append(list[4]);
+        for (int i = 5; i < list.size(); i++) {
+            encryptedData.append(armaSeparator);
+            encryptedData.append(list[i]);
+        }
+
+        SessionKey& sk = session.getKey();
+        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
+        try{
+            messageText = sk.unprotect(encryptedData, message.left(contextDataLength));
+        }
+        catch (KryptoException e) {
+            return false;
+        }
+        parsedMessage.messageText = messageText;
+    }
+
+    //regularMessageDH
+    if (type == RegularMessageDH) {
+        if (list.size() < 6) throw new MessageException("incomplete message");
+        dh = QByteArray::fromBase64(list[4]);
+
+        //in case of separator occurence in data
+        encryptedData.append(list[5]);
+        for (int i = 6; i < list.size(); i++) {
+            encryptedData.append(armaSeparator);
+            encryptedData.append(list[i]);
+        }
+
+        SessionKey& sk = session.getKey();
+
+        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
+        QByteArray messageText;
+        try {
+            QByteArray a1 = message.left(contextDataLength);
+            QByteArray a2 = message.right(message.length() - contextDataLength);
+            messageText = sk.unprotect(a2, a1);
+        }
+        catch (KryptoException e) {
+            return false;
+        }
+        sk.setDH(dh);
+        parsedMessage.messageText = messageText;
+    }
+
+    //fileTypes
+
+
+    return true;
 }
