@@ -10,7 +10,10 @@
 #include <QVector>
 #include <QList>
 #include <QTime>
-
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonDocument>
 
 class Session {
 	QString myName;
@@ -132,8 +135,19 @@ public:
      * \return                          Returns an ArmaMessage*
      */
     ArmaMessage* getFileMessage();
-
-
+	/*!
+	 * \brief parseJsonUsers	parses received list of logged in users
+	 *
+	 * \param message			received Json
+	 * \param users				parsed list of users
+	 * \return					true if everything goes well
+	 */
+	bool parseJsonUsers(ArmaMessage &message, QList<peer>& users);
+	/*!
+	 * \brief isJsonMessage		checks if message contains parseable json
+	 * \return					true if json
+	 */
+	bool isJsonMessage(const ArmaMessage &message);
 //---------------------------Others---------------------------------------------------
     Krypto mKrypto;
     peer *mPeer;    //actual peer we are communicating with

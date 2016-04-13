@@ -44,6 +44,35 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	return ret;
 }
 
+bool Messages::isJsonMessage(const ArmaMessage& message) {
+	return !QJsonDocument::fromJson(message).isNull();
+}
+
+bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
+	usersList.clear();
+	QJsonDocument jsonDoc = QJsonDocument::fromJson(message);
+	if (jsonDoc.isNull()) {
+		return false;
+	}
+	QJsonObject jsonObject = jsonDoc.object();
+	if (jsonObject["users"].isArray()) {
+		QJsonArray users = jsonObject["users"].toArray();
+		foreach (QJsonValue & user, users)
+		{
+			QJsonObject userObject = user.toObject();
+			peer p;
+			p.address = userObject["address"].toString();
+			p.name = userObject["nick"].toString();
+			p.listeningPort = userObject["port"].toInt();
+			usersList.append(p);
+		}
+	}
+	else {
+		return false;
+	}
+	return true;
+}
+
 bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
     QByteArray senderNick, receiverNick, dh;
     QDateTime timestamp;
