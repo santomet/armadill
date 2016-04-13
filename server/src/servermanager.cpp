@@ -1,9 +1,4 @@
 #include "servermanager.h"
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QDateTime>
-
 
 bool ServerManager::newRegistration(QString nickName, QString password)
 {
@@ -43,4 +38,16 @@ QJsonObject ServerManager::exportOnlineUsersJson() {
 	}
 	clientsJson.insert("users", clientsArray);
 	return clientsJson;
+}
+
+bool ServerManager::parseLoginMessage(QByteArray& message, QString& nickname, QString& password) {
+	
+	int separatorPos = message.indexOf(armaSeparator);
+	if (separatorPos == -1) {
+		return false;
+	}
+	
+	nickname = QString::fromUtf8(message.left(separatorPos));
+	password = QString::fromUtf8(QByteArray::fromBase64(message.right(separatorPos)));
+	return true;
 }

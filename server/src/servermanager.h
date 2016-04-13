@@ -3,6 +3,12 @@
 
 #include <QObject>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonDocument>
+#include <QDateTime>
+#include <QByteArray>
+#include <QString>
 #include "clientdb.h"
 
 class ServerManager : public QObject
@@ -10,8 +16,8 @@ class ServerManager : public QObject
     Q_OBJECT
 private:
     ClientDb clientDatabase;
+	const char armaSeparator = '#';
 public:
-
     ClientDb *getClientDb() {return &clientDatabase;}
 
     ServerManager(QString path) : clientDatabase(path) {}
@@ -41,6 +47,14 @@ public:
 	* \return
 	*/
 	QJsonObject exportOnlineUsersJson();
+
+	/*!
+	* \brief parseLoginMessage		parses user's login message
+	*
+	* \return						true if all went right
+	*/
+	bool parseLoginMessage(QByteArray& message, QString& nickname, QString& password);
+
 };
 
 #endif
