@@ -40,6 +40,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password) {
 	ArmaMessage ret;
 	ret.append(name.toUtf8());
+	ret.append(Messages::armaSeparator);
 	ret.append(password.toUtf8().toBase64());
 	return ret;
 }
