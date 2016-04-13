@@ -58,7 +58,7 @@ bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
 	QJsonObject jsonObject = jsonDoc.object();
 	if (jsonObject["users"].isArray()) {
 		QJsonArray users = jsonObject["users"].toArray();
-		foreach (QJsonValue & user, users)
+		foreach (QJsonValue user, users)
 		{
 			QJsonObject userObject = user.toObject();
 			peer p;
