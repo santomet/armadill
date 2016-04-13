@@ -49,6 +49,13 @@ public:
 	QJsonObject exportOnlineUsersJson();
 
 	/*!
+	* \brief JsonToByteArray        prepares json to exportable format
+	*
+	* \return						byte array containing compact json
+	*/
+	QByteArray JsonToByteArray(QJsonObject json);
+
+	/*!
 	* \brief parseLoginMessage		parses user's login message
 	*
 	* \return						true if all went right

@@ -40,6 +40,11 @@ QJsonObject ServerManager::exportOnlineUsersJson() {
 	return clientsJson;
 }
 
+QByteArray ServerManager::JsonToByteArray(QJsonObject json) {
+	return QJsonDocument(json).toJson(QJsonDocument::Compact);
+}
+
+
 bool ServerManager::parseLoginMessage(QByteArray& message, QString& nickname, QString& password) {
 	
 	int separatorPos = message.indexOf(armaSeparator);
