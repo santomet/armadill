@@ -1,6 +1,6 @@
 #include "messages.h"
 
-Messages::Messages(peer *peerToConnect, QObject *parent) : QObject(parent), mPeer(peerToConnect)
+Messages::Messages(peer *peerToConnect = nullptr, QObject *parent) : QObject(parent), mPeer(peerToConnect)
 {
     //here we create peerconnection session
 }
@@ -37,8 +37,10 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	return ret;
 }
 
-Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password) {
+Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password, bool reg) {
 	ArmaMessage ret;
+    ret.append(reg ? "r" : "l");
+    ret.append(Messages::armaSeparator);
 	ret.append(name.toUtf8());
 	ret.append(Messages::armaSeparator);
 	ret.append(password.toUtf8().toBase64());
@@ -96,13 +98,6 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 
     //regularMessage
     if (type == RegularMessage) {
-
-//        //in case of separator occurence in data
-//        encryptedData.append(list[4]);
-//        for (int i = 5; i < list.size(); i++) {
-//            encryptedData.append(armaSeparator);
-//            encryptedData.append(list[i]);
-//        }
 
         SessionKey& sk = session.getKey();
         int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators

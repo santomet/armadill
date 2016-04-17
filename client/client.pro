@@ -1,4 +1,4 @@
-QT += core testlib
+QT += core testlib network
 QT -= gui
 
 CONFIG += console

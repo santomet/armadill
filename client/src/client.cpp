@@ -23,18 +23,16 @@ int main(int argc, char *argv[])
 
     parser.process(a);
 
-    //parse things, run test if test
     if(parser.isSet(test))
     {
         UTest test;
         return test.makeTests(argc, argv);
     }
-    else
-    {
-    ClientConsole n(&a);
-    //QObject::connect(&n, SIGNAL(exitNormal()), &a, SLOT(exit()));
-    QTimer::singleShot(0, &n, SLOT(init()));
-    }
+
+    //parse things, run test if test
+
+    ClientConsole n(parser.positionalArguments());
+    QMetaObject::invokeMethod(&n, "init", Qt::QueuedConnection);
 
     return a.exec();
 }

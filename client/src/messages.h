@@ -117,9 +117,10 @@ public:
 	* \brief createLoginMessage			Creates login ArmaMessage that will be ready to send to server
 	* \param name						client name
 	* \param password					password for client name
+    * \param reg                        If it is going to be registration attempt
 	* \return							ArmaMessage which can be sent to server
 	*/
-    ArmaMessage createLoginMessage(QString & name, const QString & password);
+    ArmaMessage createLoginMessage(QString & name, const QString & password, bool reg = false);
 
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger

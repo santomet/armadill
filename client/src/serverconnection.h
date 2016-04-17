@@ -2,6 +2,9 @@
 #define SERVERCONNECTION_H
 
 #include <QObject>
+#include <QtNetwork/QtNetwork>
+#include <QtNetwork/QTcpSocket>
+#include <QThread>
 #include "krypto.h"
 #include "common.h"
 
@@ -9,7 +12,7 @@ class ServerConnection : public QObject
 {
     Q_OBJECT
 public:
-    explicit ServerConnection(QObject *parent = 0);
+    explicit ServerConnection(QString host, int port, QObject *parent = 0);
 
     QList<peer> mPeers; //list of peers from server
 
@@ -27,8 +30,22 @@ public:
 
 
 signals:
+    void connectSuccess();
 
 public slots:
+    void sendDataToServer(QByteArray array);
+
+protected slots:
+    void init();
+    void connectionError(QAbstractSocket::SocketError error);
+    void connectionSuccess() {this->mConnected = true; qDebug() << "successfully connected, please log in(l) or register(r)";}
+    void dataFromServerReady();
+    void serverDisconnected() {this->mConnected = false; qDebug() << "disconnected :(";}
+
+private:
+    bool mConnected{false};
+    QTcpSocket *mSoc;
+    QThread *mThread;
 };
 
 #endif // SERVERCONNECTION_H
