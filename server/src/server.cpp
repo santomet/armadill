@@ -18,10 +18,11 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
 
     QCommandLineOption cert(QStringList() << "c" << "cert", "File for used HTTPS certificate", "file");
+    QCommandLineOption database(QStringList() << "d" << "database", "Database file. If does not exist, a new one is created", "file");
     QCommandLineOption test(QStringList() << "t" << "test"); //Run unit tests
     parser.addOption(cert);
     parser.addOption(test);
-
+    parser.addOption(database);
 
     parser.process(a);
 
@@ -30,15 +31,11 @@ int main(int argc, char *argv[])
         UTest test;
         return test.makeTests(argc, argv);
     }
-    else
-    {
-        ServerConsole n(&parser, &a);
-        //QObject::connect(&n, SIGNAL(exitNormal()), &a, SLOT(exit()));
 
-        QTimer::singleShot(0, &n, SLOT(init()));
+    ServerConsole n(&parser, &a);
+    QMetaObject::invokeMethod(&n, "init", Qt::QueuedConnection);
 
-        return a.exec();
-    }
-    return 1;
+    return a.exec();
+
 }
 

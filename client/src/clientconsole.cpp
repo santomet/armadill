@@ -19,6 +19,10 @@ void ClientConsole::init()
         mMessages = new Messages(nullptr);
         mServerConnection = new ServerConnection(mServer.at(0), mServer.at(1).toInt());
         connect(mServerConnection, SIGNAL(connectSuccess()), this, SLOT(serverConnected()));
+        connect(mServerConnection, SIGNAL(loginSuccess()), this, SLOT(loginSuccess()));
+        connect(mServerConnection, SIGNAL(fail()), this, SLOT(fail()));
+        connect(mServerConnection, SIGNAL(registrationSuccess()), this, SLOT(registrationSuccess()));
+        connect(mServerConnection, SIGNAL(gotLoggedInPeers(QByteArray)), this, SLOT(loggedInPeersFromServer(QByteArray)));
         connect(this, SIGNAL(sendDataToServer(QByteArray)), mServerConnection, SLOT(sendDataToServer(QByteArray)));
     }
 
@@ -37,6 +41,8 @@ void ClientConsole::userInput()
         qDebug() << "Unexpected input!";
         break;
     case Idle :
+        if(Qline == "p")
+            emit sendDataToServer("j");
         //TODO
         break;
     case LoginOrRegister :

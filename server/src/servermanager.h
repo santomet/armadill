@@ -55,13 +55,6 @@ public:
 	*/
 	QByteArray JsonToByteArray(QJsonObject json);
 
-	/*!
-	* \brief parseLoginMessage		parses user's login message
-	*
-	* \return						true if all went right
-	*/
-	bool parseLoginMessage(QByteArray& message, QString& nickname, QString& password);
-
 };
 
 #endif

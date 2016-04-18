@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     //parse things, run test if test
 
-    ClientConsole n(parser.positionalArguments());
+    ClientConsole n(parser.positionalArguments(), &a);
     QMetaObject::invokeMethod(&n, "init", Qt::QueuedConnection);
 
     return a.exec();

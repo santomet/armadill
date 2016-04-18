@@ -5,6 +5,7 @@
 #include <QtNetwork/QtNetwork>
 #include <QtNetwork/QTcpSocket>
 #include <QThread>
+#include <QJsonObject>
 #include "krypto.h"
 #include "common.h"
 
@@ -31,6 +32,10 @@ public:
 
 signals:
     void connectSuccess();
+    void loginSuccess();
+    void registrationSuccess();
+    void fail();
+    void gotLoggedInPeers(QByteArray a);
 
 public slots:
     void sendDataToServer(QByteArray array);

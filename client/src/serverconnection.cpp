@@ -36,8 +36,21 @@ void ServerConnection::connectionError(QAbstractSocket::SocketError error)
 void ServerConnection::dataFromServerReady()
 {
     QByteArray a = mSoc->readAll();
-    qDebug() << "we've got data from server!";
-    QList<QByteArray> list = a.split('#');
+//    qDebug() << "we've got data from server!";
+    if(a.at(0) == 'm' || a.count('#') == 1)
+    {
+        qDebug() << "Message from server: " << a.mid(2);
+        if(a.contains("LOG_SUC"))
+            emit loginSuccess();
+        else if(a.contains("LOG_FAIL") || a.contains("REG_FAIL"))
+            emit fail();
+        else if(a.contains("REG_SUC"))
+            emit registrationSuccess();
+    }
+    else if(!QJsonDocument::fromJson(a).isNull())
+    {
+        emit gotLoggedInPeers(a);
+    }
     //TODO DEFINE
 }
 

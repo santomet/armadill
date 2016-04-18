@@ -44,15 +44,3 @@ QByteArray ServerManager::JsonToByteArray(QJsonObject json) {
 	return QJsonDocument(json).toJson(QJsonDocument::Compact);
 }
 
-
-bool ServerManager::parseLoginMessage(QByteArray& message, QString& nickname, QString& password) {
-	
-	int separatorPos = message.indexOf(armaSeparator);
-	if (separatorPos == -1) {
-		return false;
-	}
-	
-	nickname = QString::fromUtf8(message.left(separatorPos));
-	password = QString::fromUtf8(QByteArray::fromBase64(message.right(separatorPos)));
-	return true;
-}

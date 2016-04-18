@@ -87,7 +87,8 @@ HEADERS += src/serverconsole.h \
     test/utest.h \
 	src/crypto.h \
     src/clientdb.h \
-	src/servermanager.h
+	src/servermanager.h \
+    src/clientconnection.h
 
 SOURCES += \
     src/server.cpp \
@@ -166,7 +167,8 @@ SOURCES += \
     test/utest.cpp \
 	src/crypto.cpp \
     src/clientdb.cpp \
-	src/servermanager.cpp
+	src/servermanager.cpp \
+    src/clientconnection.cpp
 
 DISTFILES += \
     ../include/cmake_install.cmake \
