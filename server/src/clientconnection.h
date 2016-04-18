@@ -37,6 +37,7 @@ private:
     ServerManager *mServerManager;
     QTcpSocket *mSoc;
     qintptr mSocDescriptor;
+    QString mPeerAddress;
     QString mNickName{""};
 
 };

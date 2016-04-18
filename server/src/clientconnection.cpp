@@ -27,6 +27,7 @@ ClientConnection::~ClientConnection()
         if(!mThread->wait(1000))
             mThread->terminate();
     }
+    qDebug() << "disconnected" << mPeerAddress;
     delete mSoc;
     //TODO
 //    if(!mNickName.isEmpty())
@@ -46,8 +47,9 @@ void ClientConnection::init()
         connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
 
     }
+    mPeerAddress = mSoc->peerAddress().toString();
     connect(mSoc, SIGNAL(readyRead()), this, SLOT(readDataFromClient()));
-    qDebug() << "connection created";
+    qDebug() << "connection created: " << mPeerAddress;
 }
 
 void ClientConnection::readDataFromClient()
@@ -78,6 +80,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     else
         return false;
 
+    //TODO certificate and port
     nickname = QString::fromUtf8(list.at(1));
     password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
     if(reg)
@@ -93,7 +96,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     }
     else
     {
-        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), mSoc->peerPort(), "NO_CERT"))
+        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), 000/*TODO: real port*/, "NO_CERT"))
         {
             this->sendDataToClient("m#LOG_FAILED");
         }

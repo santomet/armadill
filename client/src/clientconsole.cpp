@@ -28,12 +28,22 @@ void ClientConsole::init()
 
 }
 
+void ClientConsole::loggedInPeersFromServer(QByteArray a)
+{
+    mMessages->parseJsonUsers(a, mOnlinePeerList);
+    qDebug() << "logged in peers: " << mOnlinePeerList.count();
+    foreach(peer p, mOnlinePeerList)
+    {
+        qDebug() << "nick: " << p.name << " addr: " << p.address << " port: " << p.listeningPort;
+    }
+}
+
 void ClientConsole::userInput()
 {
     std::string line;
     std::getline(std::cin, line);
     QString Qline = QString::fromStdString(line);
-//    qDebug() << Qline;
+    //    qDebug() << Qline;
 
     switch (mExpectedInput)
     {

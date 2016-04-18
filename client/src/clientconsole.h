@@ -64,7 +64,7 @@ public slots:
     void registrationSuccess() {qDebug() << "You can now log in (l) or register new account(r)"; mExpectedInput = LoginOrRegister;}
     void fail() {qDebug() << "Please try again - login(l) or register(r)"; mExpectedInput = LoginOrRegister;}
     void peerConnected() {/*TODO*/}
-    void loggedInPeersFromServer(QByteArray a) {mMessages->parseJsonUsers(a, mOnlinePeerList); qDebug() << "logged in peers: " << mOnlinePeerList.count();}
+    void loggedInPeersFromServer(QByteArray a);
 
 protected slots:
     void userInput();

@@ -38,6 +38,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 }
 
 Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password, bool reg) {
+    //TODO: certificate and port
 	ArmaMessage ret;
     ret.append(reg ? "r" : "l");
     ret.append(Messages::armaSeparator);
