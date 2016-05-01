@@ -29,7 +29,7 @@ void ServerConnection::init()
 
 void ServerConnection::connectionError(QAbstractSocket::SocketError error)
 {
-    qDebug() << "Connection error: " << mSoc->errorString();
+    qDebug() << "Connection error(" << error << "): " << mSoc->errorString();
     QCoreApplication::exit(0);
 }
 

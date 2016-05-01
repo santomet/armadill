@@ -1,6 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include <functional>
 #include <QObject>
 #include "krypto.h"
 #include "peerconnection.h"
@@ -14,6 +15,7 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QJsonDocument>
+#include <QtConcurrent>
 
 class Session {
 	QString myName;
@@ -21,6 +23,8 @@ class Session {
     SessionKey key;
 public:
     Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
+
+	virtual ~Session() {};
 
 	/*!
 	* \brief getMyName
@@ -46,7 +50,7 @@ class Messages : public QObject
 {
     Q_OBJECT
 public:
-    const char armaSeparator = '#';
+    static const char armaSeparator = '#';
 
 
 //-----------------------------Structures and types-------------------------------------
@@ -122,6 +126,79 @@ public:
 	*/
     ArmaMessage createLoginMessage(QString & name, const QString & password, bool reg = false);
 
+
+//---------------------------Files---------------------------------------------------
+	class FileSendingContext {
+		Session & session;
+		QString path;
+
+		class Worker : public std::function<void(QString, qint64, qint64)> {
+			Session & session;
+
+		public:
+			Worker(Session & session) : session(session) {};
+
+			void operator()(QString path, qint64 start, qint64 len) {
+				QFile file(path);
+				file.open(QIODevice::ReadOnly);
+
+				file.seek(start);
+				QByteArray data = file.read(len);
+
+				ArmaMessage ret;
+				SessionKey & key = session.getKey();
+
+				ret.append(session.getMyName().toUtf8().toBase64());
+				ret.append(Messages::armaSeparator);
+				ret.append(session.getPartnerName().toUtf8().toBase64());
+				ret.append(Messages::armaSeparator);
+				ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
+				ret.append(Messages::armaSeparator);
+
+				if (!key.isMyDHCreated()) {
+					ret.append('A' + Messages::FileMessageDH);
+					ret.append(Messages::armaSeparator);
+					ret.append(key.getDH().toBase64());
+				}
+				else {
+					ret.append('A' + Messages::FileMessage);
+				}
+
+				ret.append(Messages::armaSeparator);
+				ret.append(QString::number(start));
+				ret.append(Messages::armaSeparator);
+				ret.append(QString::number(len));
+				ret.append(Messages::armaSeparator);
+
+				ret.append(key.protect(data, ret));
+				key.generateKey();
+
+				//session.send(ret);
+			};
+		};
+
+		Worker worker;
+
+	public:
+		FileSendingContext(Session & session, QString path) : session(session), worker(session) {
+
+		};
+
+		bool startSending() {
+			QFuture<void> future = QtConcurrent::run(std::bind(worker, path, 10, 10));
+		};
+	};
+
+
+	class FileReceivingContext {
+		Session & session;
+		QString path;
+
+	public:
+		FileReceivingContext(Session & session, QString path) : session(session) {
+
+		};
+	};
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
      *                                  - creates a context which getFileMessage() will be working with
@@ -129,7 +206,7 @@ public:
      * \param receiver                  intended receiver of a file
      * \return                          true if everything goes well
      */
-    bool createFileSendingContext(QString path, QString receiver);
+	// FileContext * createFileSendingContext(Session & session, QString path);
 
     /*!
      * \brief getFileMessage
