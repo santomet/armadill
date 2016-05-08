@@ -134,55 +134,26 @@ TEST_CASE("Sending complex messages", "[message]") {
 }
 
 TEST_CASE("Sending out of order message", "[message]") {
-	mbedtls_entropy_context mtls_entropy;
-	mbedtls_entropy_init(&mtls_entropy);
-	mbedtls_entropy_gather(&mtls_entropy);
-
-	//Create "virtual" sessions for both clients
-	Session s("keket", "druhykeket", &mtls_entropy);
-	Session s2("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy);
-
-	//get each other's Diffie Hellman
-	s.getKey().setDH(s2.getKey().getDH());
-	s2.getKey().setDH(s.getKey().getDH());
-
-	//generate private key
-	s.getKey().generateKey();
-	s2.getKey().generateKey();
-
-	//the key must be the same
-	bool same = s.getKey().getSharedKey() == s2.getKey().getSharedKey();
-	REQUIRE(same);
-
+	TestSession s;
 
 	// Send simple message
 	Messages m(nullptr, 0);
 	QString sprava("TESTOVACIA SPRAVA # wlivywouihfwicdcoywgv aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaas");
-	QByteArray encrypted = m.createRegularMessage(s, sprava);
+	QByteArray encrypted = m.createRegularMessage(s.getS1(), sprava);
 
-	//get each other's Diffie Hellman
-	s.getKey().setDH(s2.getKey().getDH());
-	s2.getKey().setDH(s.getKey().getDH());
-
-	//generate private key
-	s.getKey().generateKey();
-	s2.getKey().generateKey();
-
-	//the key must be the same
-	same = s.getKey().getSharedKey() == s2.getKey().getSharedKey();
-	REQUIRE(same);
+	s.exchangeDH();
 
 	Messages::ReceivedMessage received;
 	bool valid;
 	for (int i = 0; i < 10; ++i) {
 		// Recieve simple message
-		REQUIRE_NOTHROW(valid = m.parseMessage(s2, encrypted, received));
+		REQUIRE_NOTHROW(valid = m.parseMessage(s.getS2(), encrypted, received));
 		REQUIRE(valid);
 
 		QString receivedString = QString::fromUtf8(received.messageText);
 		REQUIRE(receivedString == sprava);
 	}
-	REQUIRE_FALSE(m.parseMessage(s2, encrypted, received));
+	REQUIRE_FALSE(m.parseMessage(s.getS2(), encrypted, received));
 }
 
 TEST_CASE("Performance tests", "[message]") {
@@ -246,7 +217,7 @@ TEST_CASE("Sending file", "[File sending]") {
 	QFile file(path);
 	file.open(QIODevice::WriteOnly);
 
-	QString testData = "My little test\nTesting\n";
+	QString testData = "ORIGINAL MESSAGE WITH SIZE = 32B\nORIGINAL MESSAGE WITH SIZE = 32B";
 	file.write(testData.toUtf8());
 	file.close();
 
