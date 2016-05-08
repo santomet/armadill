@@ -124,6 +124,7 @@ public:
         mbedtls_dhm_make_params(&dhmc, 256, out, &len, mbedtls_ctr_drbg_random, &random);
     };
 	SessionKey(const SessionKey &) = delete;
+	SessionKey(SessionKey &&) = delete;
 	~SessionKey() {
 		mbedtls_dhm_free(&dhmc);
 		mbedtls_ctr_drbg_free(&random);

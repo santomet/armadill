@@ -177,25 +177,25 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 
 Messages::FileSendingContext::FileSendingContext(Session & session, QString path) : session(session), path(path) {
 	QFile file(path);
-	file.open(QIODevice::ReadOnly);
+	if(!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
 	fileSize = file.size();
 	file.close();
 }
 
 
 bool Messages::FileSendingContext::startSending() {
-	qint64 chunks = (fileSize - 1) / Worker::maxChunkSize + 1;
-	qint64 threads = std::max(chunks, maxThreads);
+	qint64 chunks = (fileSize - 1) / Messages::maxChunkSize + 1;
+	qint64 threads = std::min(chunks, maxThreads);
 	qint64 done = 0;
 
 	for (qint64 i = 0; i < threads; ++i) {
 		workers.push_back(Worker(session, path));
 
 		// Load balancer
-		qint64 cChunks = ((chunks - 1) / threads + ((chunks - 1) % threads > i) ? 0 : 1);
+		qint64 cChunks = ((chunks - 1) / threads + (((chunks - 1) % threads < i) ? 0 : 1));
+		qint64 start = done * Messages::maxChunkSize;
 		done += cChunks;
-		qint64 start = done * Worker::maxChunkSize;
-		qint64 len = (i == threads - 1) ? (fileSize - start) : (cChunks * Worker::maxChunkSize);
+		qint64 len = (i == threads - 1) ? (fileSize - start) : (cChunks * Messages::maxChunkSize);
 
 		futures.push_back(QtConcurrent::run(workers.back(), start, len));
 	}
@@ -203,12 +203,15 @@ bool Messages::FileSendingContext::startSending() {
 }
 
 void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen) {
+	static std::mutex testLock;
+	std::lock_guard<std::mutex> testLockG(testLock);
+	
 	QFile file(path);
 	file.open(QIODevice::ReadOnly);
 	file.seek(gstart);
 
 	do {
-		qint64 len = std::max(glen, maxChunkSize);
+		qint64 len = std::min(glen, maxChunkSize);
 		qint64 start = file.pos();
 		glen -= len;
 
@@ -243,7 +246,7 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 		ret.append(key.protect(data, ret));
 		if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
 
-												//session.send(ret);
-	} while (glen);
+		//session.send(ret);
+	} while (glen > 0);
 	file.close();
 }

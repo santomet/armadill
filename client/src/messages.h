@@ -51,7 +51,7 @@ class Messages : public QObject
     Q_OBJECT
 public:
     static const char armaSeparator = '#';
-
+	static const qint64 maxChunkSize = 2048;
 
 //-----------------------------Structures and types-------------------------------------
     /*!
@@ -137,8 +137,6 @@ public:
 			Session & session;
 			QString path;
 		public:
-			static const qint64 maxChunkSize = 2048;
-
 			Worker(Session & session, QString path) : session(session), path(path) {};
 			Worker(const Worker & w) : session(w.session), path(w.path) {};
 
