@@ -162,6 +162,7 @@ SOURCES += \
     ../include/x509write_csr.c \
     ../include/xtea.c \
     test/utest.cpp \
+	test/message.cpp \
     src/krypto.cpp \
     src/messages.cpp \
     src/serverconnection.cpp \
