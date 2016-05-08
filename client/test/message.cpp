@@ -10,31 +10,53 @@
 #include "../../include/catch.hpp"
 #include <QFile>
 
-class TestParseIntercept {
-	bool checkType;
+template <class C>
+class RefData {
 	bool topLevel;
-	Messages::MsgType type;
-
-	Messages::ReceivedMessage * data;
+	C * data;
 public:
-	TestParseIntercept() : checkType(false), data(new Messages::ReceivedMessage), topLevel(true) {};
-	TestParseIntercept(Messages::MsgType t) : type(t), checkType(true), data(new Messages::ReceivedMessage), topLevel(true) { };
-	TestParseIntercept(const TestParseIntercept & o) : checkType(o.checkType), type(o.type), data(o.data), topLevel(false) {};
-	~TestParseIntercept() {
+	RefData() : data(new C), topLevel(true) {};
+	RefData(const C & d) : data(new C(d)) {};
+	RefData(const RefData & o) : data(o.data), topLevel(false) {};
+	~RefData() {
 		if (topLevel) delete data;
 	};
 
+	RefData & operator= (const RefData &) = delete;
+	RefData & operator= (const C & d) {
+		*data = d;
+		return *this;
+	};
+
+	C & getData() { return *data; };
+	const C & getData() const { return *data; };
+
+	operator C &() { return *data; };
+	operator const C &() const { return *data; };
+};
+
+class TestParseIntercept {
+	bool checkType;
+	Messages::MsgType type;
+
+	RefData<Messages::ReceivedMessage> data;
+public:
+	TestParseIntercept() : checkType(false) {};
+	TestParseIntercept(Messages::MsgType t) : type(t), checkType(true){ };
+	TestParseIntercept(const TestParseIntercept & o) : checkType(o.checkType), type(o.type), data(o.data) {};
+	~TestParseIntercept() {};
+
 	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & payload) {
 		if (checkType && type != t) throw MessageException("Wrong type returned!");
-		*data = payload;
+		data = payload;
 	};
 
 	operator Messages::ReceivedMessage &() {
-		return *data;
+		return data;
 	};
 
 	Messages::ReceivedMessage & getData() { 
-		return *data; 
+		return data; 
 	};
 };
 
