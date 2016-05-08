@@ -76,8 +76,8 @@ public:
 
     struct FileContext
     {
-        unsigned char id[16]; //shortened hash, maybe? TODO
-        bool sending; //true if file is being sent, false if received
+        unsigned char id[16];
+        bool sending;
         QFile *file = nullptr;
         size_t wholeSize = 0;
         size_t processedSize = 0;

@@ -14,8 +14,8 @@ void ClientConsole::init()
     }
     else
     {
-        mNotifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this);
-        connect(mNotifier, SIGNAL(activated(int)), this, SLOT(userInput()));
+        mInputHelper = new UserInputHelper();
+        connect(mInputHelper, SIGNAL(inputReady(QString)), this, SLOT(userInput(QString)));
         mMessages = new Messages(nullptr);
         mServerConnection = new ServerConnection(mServer.at(0), mServer.at(1).toInt());
         connect(mServerConnection, SIGNAL(connectSuccess()), this, SLOT(serverConnected()));
@@ -38,13 +38,8 @@ void ClientConsole::loggedInPeersFromServer(QByteArray a)
     }
 }
 
-void ClientConsole::userInput()
+void ClientConsole::userInput(QString Qline)
 {
-    std::string line;
-    std::getline(std::cin, line);
-    QString Qline = QString::fromStdString(line);
-    //    qDebug() << Qline;
-
     switch (mExpectedInput)
     {
     case None :
