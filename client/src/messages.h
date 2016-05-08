@@ -142,51 +142,7 @@ public:
 			Worker(Session & session, QString path) : session(session), path(path) {};
 			Worker(const Worker & w) : session(w.session), path(w.path) {};
 
-			void operator()(qint64 gstart, qint64 glen) {
-				QFile file(path);
-				file.open(QIODevice::ReadOnly);
-				file.seek(gstart);
-
-				do {
-					qint64 len = std::max(glen, maxChunkSize);
-					qint64 start = file.pos();
-					glen -= len;
-
-					QByteArray data = file.read(len);
-
-					ArmaMessage ret;
-					SessionKey & key = session.getKey();
-
-					ret.append(session.getMyName().toUtf8().toBase64());
-					ret.append(Messages::armaSeparator);
-					ret.append(session.getPartnerName().toUtf8().toBase64());
-					ret.append(Messages::armaSeparator);
-					ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
-					ret.append(Messages::armaSeparator);
-
-					QByteArray dh = key.conditionalGetDH();
-					if (dh.length() > 0) {
-						ret.append('A' + Messages::FileMessageDH);
-						ret.append(Messages::armaSeparator);
-						ret.append(dh.toBase64());
-					}
-					else {
-						ret.append('A' + Messages::FileMessage);
-					}
-
-					ret.append(Messages::armaSeparator);
-					ret.append(QString::number(start));
-					ret.append(Messages::armaSeparator);
-					ret.append(QString::number(len));
-					ret.append(Messages::armaSeparator);
-
-					ret.append(key.protect(data, ret));
-					if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
-
-					//session.send(ret);
-				} while (glen);
-				file.close();
-			};
+			void operator()(qint64 gstart, qint64 glen);
 		};
 
 		std::vector<Worker> workers;
@@ -194,30 +150,9 @@ public:
 
 	public:
 		static const qint64 maxThreads = 8;
-		FileSendingContext(Session & session, QString path) : session(session), path(path) {
-			QFile file(path);
-			file.open(QIODevice::ReadOnly);
-			fileSize = file.size();
-			file.close();
-		};
+		FileSendingContext(Session & session, QString path);
 
-		bool startSending() {
-			qint64 chunks = (fileSize - 1) / Worker::maxChunkSize + 1;
-			qint64 threads = std::max(chunks, maxThreads);
-			qint64 done = 0;
-
-			for (qint64 i = 0; i < threads; ++i) {
-				workers.push_back(Worker(session, path));
-				
-				// Load balancer
-				qint64 cChunks = ((chunks - 1) / threads + ((chunks - 1) % threads > i) ? 0 : 1);
-				done += cChunks;
-				qint64 start = done * Worker::maxChunkSize;
-				qint64 len = (i == threads - 1) ? (fileSize - start) : (cChunks * Worker::maxChunkSize);
-
-				futures.push_back(QtConcurrent::run(workers.back(), start, len));
-			}
-		};
+		bool startSending();
 	};
 
 
