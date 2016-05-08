@@ -157,21 +157,7 @@ TEST_CASE("Sending out of order message", "[message]") {
 }
 
 TEST_CASE("Performance tests", "[message]") {
-	mbedtls_entropy_context mtls_entropy;
-	mbedtls_entropy_init(&mtls_entropy);
-	mbedtls_entropy_gather(&mtls_entropy);
-
-	//Create "virtual" sessions for both clients
-	Session s("keket", "druhykeket", &mtls_entropy);
-	Session s2("druhykeket", "keket", &mtls_entropy);
-
-	//get each other's Diffie Hellman
-	s.getKey().setDH(s2.getKey().getDH());
-	s2.getKey().setDH(s.getKey().getDH());
-	//generate private key
-	s.getKey().generateKey();
-	s2.getKey().generateKey();
-
+	TestSession s;
 	Messages m(nullptr, 0);
 
 	QString originalMessage("ORIGINAL MESSAGE WITH SIZE = 32B");
@@ -187,10 +173,10 @@ TEST_CASE("Performance tests", "[message]") {
 	for (int i = 1; i <= 0; ++i) {
 		sprava = originalMessage.repeated(2);
 		encryptStart = clock();
-		encrypted = m.createRegularMessage(s, sprava);
+		encrypted = m.createRegularMessage(s.getS1(), sprava);
 		encryptEnd = clock();
 		decryptStart = clock();
-		valid = m.parseMessage(s2, encrypted, received);
+		valid = m.parseMessage(s.getS2(), encrypted, received);
 		decryptEnd = clock();
 		receivedString = QString::fromUtf8(received.messageText);
 
@@ -204,11 +190,7 @@ TEST_CASE("Performance tests", "[message]") {
 
 		originalMessage = sprava;
 
-		s.getKey().setDH(s2.getKey().getDH());
-		s2.getKey().setDH(s.getKey().getDH());
-		//generate private key
-		s.getKey().generateKey();
-		s2.getKey().generateKey();
+		s.exchangeDH();
 	}
 }
 
@@ -227,6 +209,7 @@ TEST_CASE("Sending file", "[File sending]") {
 	REQUIRE_NOTHROW(test.startSending());
 
 	QThread::sleep(3);
+	file.deleteLater();
 }
 
 TEST_CASE("Sending long files", "[File sending]") {
@@ -240,7 +223,7 @@ TEST_CASE("Sending long files", "[File sending]") {
 		file.open(QIODevice::WriteOnly);
 		do {
 			testData += testData;
-		} while (testData.length() <= i * 2048);
+		} while (testData.length() <= i * Messages::maxChunkSize);
 		file.write(testData.toUtf8());
 		file.close();
 
@@ -248,8 +231,10 @@ TEST_CASE("Sending long files", "[File sending]") {
 
 		Messages::FileSendingContext test(s.getS1(), path);
 		REQUIRE_NOTHROW(test.startSending());
+		QThread::sleep(2);
 	}
-	QThread::sleep(20);
+	QThread::sleep(10);
+	file.deleteLater();
 }
 
 
