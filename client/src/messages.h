@@ -132,61 +132,71 @@ public:
 		Session & session;
 		QString path;
 
-		class Worker : public std::function<void(QString, qint64, qint64)> {
+		class Worker : public std::function<void(qint64, qint64)> {
+			static const qint64 maxChunkSize = 2048;
+
 			Session & session;
+			QFile file;
 
 		public:
-			Worker(Session & session) : session(session) {};
+			Worker(Session & session, QString path) : session(session), file(path) {};
+			Worker(const Worker & w) : session(w.session), file(w.file) {};
 
-			void operator()(QString path, qint64 start, qint64 len) {
-				QFile file(path);
+			void operator()(qint64 gstart, qint64 glen) {
 				file.open(QIODevice::ReadOnly);
+				file.seek(gstart);
 
-				file.seek(start);
-				QByteArray data = file.read(len);
+				do {
+					qint64 len = std::max(glen, maxChunkSize);
+					qint64 start = file.pos();
+					glen -= len;
 
-				ArmaMessage ret;
-				SessionKey & key = session.getKey();
+					QByteArray data = file.read(len);
 
-				ret.append(session.getMyName().toUtf8().toBase64());
-				ret.append(Messages::armaSeparator);
-				ret.append(session.getPartnerName().toUtf8().toBase64());
-				ret.append(Messages::armaSeparator);
-				ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
-				ret.append(Messages::armaSeparator);
+					ArmaMessage ret;
+					SessionKey & key = session.getKey();
 
-				QByteArray dh = key.conditionalGetDH();
-				if (dh.length() > 0) {
-					ret.append('A' + Messages::FileMessageDH);
+					ret.append(session.getMyName().toUtf8().toBase64());
 					ret.append(Messages::armaSeparator);
-					ret.append(dh.toBase64());
-				}
-				else {
-					ret.append('A' + Messages::FileMessage);
-				}
+					ret.append(session.getPartnerName().toUtf8().toBase64());
+					ret.append(Messages::armaSeparator);
+					ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
+					ret.append(Messages::armaSeparator);
 
-				ret.append(Messages::armaSeparator);
-				ret.append(QString::number(start));
-				ret.append(Messages::armaSeparator);
-				ret.append(QString::number(len));
-				ret.append(Messages::armaSeparator);
+					QByteArray dh = key.conditionalGetDH();
+					if (dh.length() > 0) {
+						ret.append('A' + Messages::FileMessageDH);
+						ret.append(Messages::armaSeparator);
+						ret.append(dh.toBase64());
+					}
+					else {
+						ret.append('A' + Messages::FileMessage);
+					}
 
-				ret.append(key.protect(data, ret));
-				if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
+					ret.append(Messages::armaSeparator);
+					ret.append(QString::number(start));
+					ret.append(Messages::armaSeparator);
+					ret.append(QString::number(len));
+					ret.append(Messages::armaSeparator);
 
-				//session.send(ret);
+					ret.append(key.protect(data, ret));
+					if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
+
+					//session.send(ret);
+				} while (glen);
+				file.close();
 			};
 		};
 
 		Worker worker;
 
 	public:
-		FileSendingContext(Session & session, QString path) : session(session), worker(session) {
+		FileSendingContext(Session & session, QString path) : session(session), worker(session, path) {
 
 		};
 
 		bool startSending() {
-			QFuture<void> future = QtConcurrent::run(std::bind(worker, path, 10, 10));
+			QFuture<void> future = QtConcurrent::run(worker, 10, 10);
 		};
 	};
 
