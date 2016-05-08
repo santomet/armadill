@@ -79,3 +79,4 @@ server/Win32/*
 *.smproj
 *.opendb
 *.db
+client/test.t
