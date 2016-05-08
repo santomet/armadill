@@ -57,44 +57,6 @@ public:
     bool verifyCert(const QString pubToVerify, const QString pubCA);
 //---------------------------------------------------------------------
 
-//-----------------------------DIFFIE-HELLMAN---------------------------
-    /*!
-     * \brief generateDHPublic
-     *                          Generates new private and exports public for DH value
-     *                          NOTE: The DH context will not be freed after this,
-     *                          because we need the secret to compute shared secret afterwards
-     *
-     * \param output            public DH value will be exported here
-     * \return                  true if successful
-     */
-    bool generateDHPublic(QByteArray &output);
-
-    /*!
-     * \brief computeDHSharedSecret
-     *                          Computes shared secret Key which can be used for encrypting messages
-     *                          NOTE: We need to have initialized DH context with generated secret!
-     *
-     * \param key               the key will be written here
-     * \param theirPub          Public value we get from peer
-     * \return                  true if successful
-     */
-    bool computeDHSharedSecret(const QByteArray &key, const QByteArray theirPub);
-//------------------------------------------------------------------------
-
-//---------------------HMAC-------------------------------------------------
-    /*!
-     * \brief computeHMAC       Computes HMAC (SHA512) for given message and key
-     * \param hash              result will be stored here
-     * \param key               Key for HMAC
-     * \param message           Message to authenticate
-     * \return                  true if succesful
-     */
-    bool computeHMAC(QByteArray &result, const QByteArray &key, const QByteArray &message);
-
-//------------------------------------------------------------------------------
-
-//------------------------------AES---------------------------------------------
-
 //----------------------------------------------------------------------------------------
 //-----------------------PASSWORDS--------------------------------------------------------
     /*!
