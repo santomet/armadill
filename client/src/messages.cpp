@@ -10,32 +10,9 @@ Messages::~Messages()
 
 }
 
+
 Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QString & message) {
-	ArmaMessage ret;
-    SessionKey & key = session.getKey();
-	
-	ret.append(session.getMyName().toUtf8().toBase64());
-	ret.append(Messages::armaSeparator);
-	ret.append(session.getPartnerName().toUtf8().toBase64());
-	ret.append(Messages::armaSeparator);
-	ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
-	ret.append(Messages::armaSeparator);
-	
-	QByteArray dh = key.conditionalGetDH();
-	if (dh.length() > 0) {
-		ret.append('A' + Messages::RegularMessageDH);
-		ret.append(Messages::armaSeparator);
-		ret.append(key.getDH().toBase64());
-	}
-	else {
-		ret.append('A' + Messages::RegularMessage);
-	}
-	ret.append(Messages::armaSeparator);
-
-	ret.append(key.protect(message.toUtf8(), ret));
-
-    if(dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
-	return ret;
+	return addMessageHeader(session, message.toUtf8(), Messages::MsgType::RegularMessage, Messages::MsgType::RegularMessageDH);
 }
 
 Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password, bool reg) {
@@ -78,27 +55,54 @@ bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
 	return true;
 }
 
-bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::ReceivedMessage &parsedMessage) {
-    QByteArray senderNick, receiverNick, dh;
+bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, ArmaMessage &message, std::function<void(MsgType, const ReceivedMessage &)> callback) {
+	QString senderNick, receiverNick;
+	QByteArray dh;
     QDateTime timestamp;
-    char type;
+    MsgType type;
 
     QList<QByteArray> list = message.split(armaSeparator);
 
-    if (list.size() < 5) throw new MessageException("incomplete message");
-    //senderNick = list[0];
-    //receiverNick = list[1];
+    if (list.size() < 5) throw MessageException("incomplete message");
 
+    senderNick = QString::fromUtf8(QByteArray::fromBase64(list[0]));
+    receiverNick = QString::fromUtf8(QByteArray::fromBase64(list[1]));
+
+	Session & session = sessions(senderNick);
+	if (session.getMyName() != receiverNick) throw MessageException("Message not for this client.");
+
+	ReceivedMessage parsedMessage;
     timestamp.setMSecsSinceEpoch(list[2].toLongLong());
     parsedMessage.timestamp = timestamp;
 
-    type = list[3][0] - 'A';
+    type = static_cast<MsgType>(list[3][0] - 'A');
 
 
     QByteArray messageText;
 
+	if (type % 2) {
+		if (list.size() < 6) throw MessageException("incomplete message");
+		dh = QByteArray::fromBase64(list[4]);
+
+		SessionKey& sk = session.getKey();
+
+		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
+		QByteArray messageText;
+		try {
+			QByteArray a1 = message.left(contextDataLength);
+			QByteArray a2 = message.right(message.length() - contextDataLength);
+			messageText = sk.unprotect(a2, a1);
+		}
+		catch (KryptoException e) {
+			return false;
+		}
+		sk.setDH(dh);
+		sk.generateKey();
+
+		parsedMessage.messageText = messageText;
+	}
     //regularMessage
-    if (type == RegularMessage) {
+	else {
 
         SessionKey& sk = session.getKey();
         int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
@@ -113,34 +117,36 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
         parsedMessage.messageText = messageText;
     }
 
-    //regularMessageDH
-    if (type == RegularMessageDH) {
-        if (list.size() < 6) throw new MessageException("incomplete message");
-        dh = QByteArray::fromBase64(list[4]);
-
-
-        SessionKey& sk = session.getKey();
-
-        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
-        QByteArray messageText;
-        try {
-            QByteArray a1 = message.left(contextDataLength);
-            QByteArray a2 = message.right(message.length() - contextDataLength);
-            messageText = sk.unprotect(a2, a1);
-        }
-        catch (KryptoException e) {
-            return false;
-        }
-        sk.setDH(dh);
-		sk.generateKey();
-
-        parsedMessage.messageText = messageText;
-    }
-
-    //fileTypes
-
-
+	callback(type, parsedMessage);
     return true;
+}
+
+QByteArray Messages::addMessageHeader(Session & session, const QByteArray & payload, Messages::MsgType type, Messages::MsgType typeDH) {
+	QByteArray ret;
+	SessionKey & key = session.getKey();
+
+	ret.append(session.getMyName().toUtf8().toBase64());
+	ret.append(Messages::armaSeparator);
+	ret.append(session.getPartnerName().toUtf8().toBase64());
+	ret.append(Messages::armaSeparator);
+	ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
+	ret.append(Messages::armaSeparator);
+
+	QByteArray dh = key.conditionalGetDH();
+	if (dh.length() > 0) {
+		ret.append('A' + typeDH);
+		ret.append(Messages::armaSeparator);
+		ret.append(key.getDH().toBase64());
+	}
+	else {
+		ret.append('A' + type);
+	}
+	ret.append(Messages::armaSeparator);
+
+	ret.append(key.protect(payload, ret));
+
+	if (dh.length() > 0) key.generateKey();
+	return ret;
 }
 
 
@@ -198,36 +204,14 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 		qint64 start = file.pos();
 		glen -= len;
 
-		QByteArray data = file.read(len);
+		QByteArray payload;
+		payload.append(QString::number(start));
+		payload.append(Messages::armaSeparator);
+		payload.append(QString::number(len));
+		payload.append(Messages::armaSeparator);
+		payload.append(file.read(len));
 
-		ArmaMessage ret;
-		SessionKey & key = session.getKey();
-
-		ret.append(session.getMyName().toUtf8().toBase64());
-		ret.append(Messages::armaSeparator);
-		ret.append(session.getPartnerName().toUtf8().toBase64());
-		ret.append(Messages::armaSeparator);
-		ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
-		ret.append(Messages::armaSeparator);
-
-		QByteArray dh = key.conditionalGetDH();
-		if (dh.length() > 0) {
-			ret.append('A' + Messages::FileMessageDH);
-			ret.append(Messages::armaSeparator);
-			ret.append(dh.toBase64());
-		}
-		else {
-			ret.append('A' + Messages::FileMessage);
-		}
-
-		ret.append(Messages::armaSeparator);
-		ret.append(QString::number(start));
-		ret.append(Messages::armaSeparator);
-		ret.append(QString::number(len));
-		ret.append(Messages::armaSeparator);
-
-		ret.append(key.protect(data, ret));
-		if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
+		QByteArray ret = addMessageHeader(session, payload, Messages::MsgType::FileMessage, Messages::MsgType::FileMessageDH);
 
 		dataSender(ret);
 	} while (glen > 0);

@@ -10,6 +10,34 @@
 #include "../../include/catch.hpp"
 #include <QFile>
 
+class TestParseIntercept {
+	bool checkType;
+	bool topLevel;
+	Messages::MsgType type;
+
+	Messages::ReceivedMessage * data;
+public:
+	TestParseIntercept() : checkType(false), data(new Messages::ReceivedMessage), topLevel(true) {};
+	TestParseIntercept(Messages::MsgType t) : type(t), checkType(true), data(new Messages::ReceivedMessage), topLevel(true) { };
+	TestParseIntercept(const TestParseIntercept & o) : checkType(o.checkType), type(o.type), data(o.data), topLevel(false) {};
+	~TestParseIntercept() {
+		if (topLevel) delete data;
+	};
+
+	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & payload) {
+		if (checkType && type != t) throw MessageException("Wrong type returned!");
+		*data = payload;
+	};
+
+	operator Messages::ReceivedMessage &() {
+		return *data;
+	};
+
+	Messages::ReceivedMessage & getData() { 
+		return *data; 
+	};
+};
+
 class TestSession {
 	Session *s1;
 	Session *s2;
@@ -20,7 +48,7 @@ public:
 		mbedtls_entropy_init(&mtls_entropy);
 		mbedtls_entropy_gather(&mtls_entropy);
 
-		s1 = new Session("keket", "druhykeket", &mtls_entropy);
+		s1 = new Session("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy);
 		s2 = new Session("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy);
 
 		exchangeDH();
@@ -45,6 +73,25 @@ public:
 	Session & getS2() { return *s2; };
 };
 
+class TestSessionHandler {
+	Session & s;
+public:
+	TestSessionHandler(Session & s) : s(s) {};
+	Session & operator()(QString & name) {
+		if (name.compare(s.getPartnerName())) throw MessageException("Unknown sender!"); 
+		return s; 
+	};
+};
+
+class TestDataSender {
+
+public:
+	TestDataSender() {};
+	void operator()(QByteArray & data) {
+		qDebug() << data.length();
+	};
+};
+
 
 TEST_CASE("Key exchange", "[Krypto]") {
 	mbedtls_entropy_context mtls_entropy;
@@ -52,7 +99,7 @@ TEST_CASE("Key exchange", "[Krypto]") {
 	mbedtls_entropy_gather(&mtls_entropy);
 
 	//Create "virtual" sessions for both clients
-	Session s("keket", "druhykeket", &mtls_entropy);
+	Session s("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy);
 	Session s2("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy);
 
 	QSet<QString> usedKeys;
@@ -88,11 +135,11 @@ TEST_CASE("Sending simple message", "[message]") {
 	QByteArray encrypted = m.createRegularMessage(s.getS1(), sprava);
 
 	// Recieve simple message
-	Messages::ReceivedMessage received;
-	bool valid = m.parseMessage(s.getS2(), encrypted, received);
+	TestParseIntercept received;
+	bool valid = m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received);
 	REQUIRE(valid);
 
-	QString receivedString = QString::fromUtf8(received.messageText);
+	QString receivedString = QString::fromUtf8(received.getData().messageText);
 	REQUIRE(receivedString == sprava);
 }
 
@@ -103,18 +150,18 @@ TEST_CASE("Sending complex messages", "[message]") {
 	QString sprava("TESTOVACIA SPRAVA");
 	QByteArray encrypted = m.createRegularMessage(s.getS1(), sprava);
 	//	qDebug() << "PROTECTED:   " << encrypted;
-	Messages::ReceivedMessage received;
-	bool valid = m.parseMessage(s.getS2(), encrypted, received);
+	TestParseIntercept received;
+	bool valid = m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received);
 	REQUIRE(valid);
 	//	qDebug() << "Raw unprotected = " << received.messageText;
-	QString receivedString = QString::fromUtf8(received.messageText);
+	QString receivedString = QString::fromUtf8(received.getData().messageText);
 
 	REQUIRE(receivedString == sprava);
 
 	sprava = "Iná správa s diakritikou. # a špeciálnym znakom ooooha";
 	encrypted = m.createRegularMessage(s.getS2(), sprava);
-	valid = m.parseMessage(s.getS1(), encrypted, received);
-	receivedString = QString::fromUtf8(received.messageText);
+	valid = m.parseMessage(TestSessionHandler(s.getS1()), encrypted, received);
+	receivedString = QString::fromUtf8(received.getData().messageText);
 	REQUIRE(receivedString == sprava);
 
 	//without key change:
@@ -122,15 +169,15 @@ TEST_CASE("Sending complex messages", "[message]") {
 	sprava = "Táto správa sa použije nieko¾kokrát z jednej session";
 	for (int i = 0; i<10; ++i) {
 		encrypted = m.createRegularMessage(s.getS1(), sprava);
-		valid = m.parseMessage(s.getS2(), encrypted, received);
-		receivedString = QString::fromUtf8(received.messageText);
+		valid = m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received);
+		receivedString = QString::fromUtf8(received.getData().messageText);
 		REQUIRE(receivedString == sprava);
 	}
 	REQUIRE_THROWS_AS(encrypted = m.createRegularMessage(s.getS1(), sprava), KryptoOveruseException);
 	REQUIRE_THROWS_AS(encrypted = m.createRegularMessage(s.getS1(), sprava), KryptoOveruseException);
 
-	REQUIRE_FALSE(m.parseMessage(s.getS2(), encrypted, received));
-	REQUIRE_FALSE(m.parseMessage(s.getS2(), encrypted, received));
+	REQUIRE_FALSE(m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received));
+	REQUIRE_FALSE(m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received));
 }
 
 TEST_CASE("Sending out of order message", "[message]") {
@@ -143,17 +190,17 @@ TEST_CASE("Sending out of order message", "[message]") {
 
 	s.exchangeDH();
 
-	Messages::ReceivedMessage received;
+	TestParseIntercept received;
 	bool valid;
 	for (int i = 0; i < 10; ++i) {
 		// Recieve simple message
-		REQUIRE_NOTHROW(valid = m.parseMessage(s.getS2(), encrypted, received));
+		REQUIRE_NOTHROW(valid = m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received));
 		REQUIRE(valid);
 
-		QString receivedString = QString::fromUtf8(received.messageText);
+		QString receivedString = QString::fromUtf8(received.getData().messageText);
 		REQUIRE(receivedString == sprava);
 	}
-	REQUIRE_FALSE(m.parseMessage(s.getS2(), encrypted, received));
+	REQUIRE_FALSE(m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received));
 }
 
 TEST_CASE("Performance tests", "[message]") {
@@ -164,7 +211,7 @@ TEST_CASE("Performance tests", "[message]") {
 	QString sprava;
 	QByteArray encrypted;
 	bool valid;
-	Messages::ReceivedMessage received;
+	TestParseIntercept received;
 	QString receivedString;
 
 	clock_t encryptStart, encryptEnd, decryptStart, decryptEnd;
@@ -176,9 +223,9 @@ TEST_CASE("Performance tests", "[message]") {
 		encrypted = m.createRegularMessage(s.getS1(), sprava);
 		encryptEnd = clock();
 		decryptStart = clock();
-		valid = m.parseMessage(s.getS2(), encrypted, received);
+		valid = m.parseMessage(TestSessionHandler(s.getS2()), encrypted, received);
 		decryptEnd = clock();
-		receivedString = QString::fromUtf8(received.messageText);
+		receivedString = QString::fromUtf8(received.getData().messageText);
 
 		timeSpentEncrypt = (encryptEnd - encryptStart) / ((double)CLOCKS_PER_SEC / 1000);
 		timeSpentDecrypt = (decryptEnd - decryptStart) / ((double)CLOCKS_PER_SEC / 1000);
@@ -194,10 +241,6 @@ TEST_CASE("Performance tests", "[message]") {
 	}
 }
 
-void mDataDebugSender(QByteArray & data) {
-	qDebug() << data.length() << endl;
-}
-
 TEST_CASE("Sending file", "[File sending]") {
 	static const char * path = "test.t";
 	QFile file(path);
@@ -209,7 +252,7 @@ TEST_CASE("Sending file", "[File sending]") {
 
 	TestSession s;
 
-	Messages::FileSendingContext test(s.getS1(), path, std::function<void(QByteArray &)>(mDataDebugSender));
+	Messages::FileSendingContext test(s.getS1(), path, TestDataSender());
 	REQUIRE_NOTHROW(test.startSending());
 
 	QThread::sleep(3);
@@ -233,7 +276,7 @@ TEST_CASE("Sending long files", "[File sending]") {
 
 		s.exchangeDH();
 
-		Messages::FileSendingContext test(s.getS1(), path, std::function<void(QByteArray &)>(mDataDebugSender));
+		Messages::FileSendingContext test(s.getS1(), path, TestDataSender());
 		REQUIRE_NOTHROW(test.startSending());
 		QThread::sleep(2);
 	}

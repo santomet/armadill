@@ -71,11 +71,11 @@ public:
 
     enum MsgType
     {
-        RegularMessage = 0,
-        RegularMessageDH = 1,
-        FileMessage = 2,
-        FileMessageDH = 3,
-        PureDH = 4
+		PureDH = 0,
+        RegularMessage = 2,
+        RegularMessageDH = 3,
+        FileMessage = 4,
+        FileMessageDH = 5
     };
 
     struct FileContext
@@ -94,11 +94,21 @@ public:
 		QByteArray messageText;
 		QDateTime timestamp;
 
+		ReceivedMessage() {};
+		ReceivedMessage(const ReceivedMessage & o) : messageText(o.messageText), timestamp(o.timestamp) {};
+
 	};
 //-----------------------Public Methods--------------------------------------------------
 
     Messages(peer *peerToConnect, QObject *parent = 0);
     ~Messages();
+
+
+
+
+
+
+	Session & getSessionFromName(QString & name);
 
     /*!
      * \brief parseMessage              Parses message and makes proper actions
@@ -107,7 +117,11 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    bool parseMessage(Session & session, ArmaMessage &message, ReceivedMessage & receivedMessage);
+    bool parseMessage(std::function<Session &(QString & name)> sessions, ArmaMessage &message, std::function<void(MsgType, const ReceivedMessage &)> callback);
+
+
+
+	static QByteArray addMessageHeader(Session & session, const QByteArray & payload, Messages::MsgType type, Messages::MsgType typeDH);
 
     /*!
      * \brief createRegularMessage      Creates regular ArmaMessage that will be ready to send
@@ -206,11 +220,6 @@ private:
 
 	
     ArmaMessage* createFileMessage(FileContext *context, QString eceiver);
-
-    QList<FileContext*>  mFileContexts;
-    QList<FileChunkDecrypted*> mUnorderedFileBlocks;
-
-
 };
 
 class MessageException : public std::runtime_error {
