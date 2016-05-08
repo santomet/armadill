@@ -99,15 +99,15 @@ class SessionKey {
 	std::atomic<bool> my;
 	std::atomic<bool> other;
 
-	std::atomic<size_t> key_enc_uses		= 0;
-	std::atomic<size_t> key_dec_uses		= 0;
-	std::atomic<size_t> key_old_dec_uses	= 0;
+	std::atomic<size_t> key_enc_uses;
+	std::atomic<size_t> key_dec_uses;
+	std::atomic<size_t> key_old_dec_uses;
 
 	std::mutex keyUse;
 	std::mutex dhmUse;
 
 public:
-	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false) {
+	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false), key_enc_uses(0), key_dec_uses(0), key_old_dec_uses(0) {
 		mbedtls_dhm_init(&dhmc);
         //TODO set dhm_context here
         uchar out[2048];

@@ -199,6 +199,7 @@ bool Messages::FileSendingContext::startSending() {
 
 		futures.push_back(QtConcurrent::run(workers.back(), start, len));
 	}
+	return true;
 }
 
 void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen) {
