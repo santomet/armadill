@@ -133,7 +133,7 @@ public:
 		QString path;
 		qint64 fileSize;
 
-		class Worker : public std::function<void(qint64, qint64)> {
+		class Worker {
 			Session & session;
 			QString path;
 		public:
