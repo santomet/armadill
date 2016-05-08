@@ -11,6 +11,7 @@
 #include <iostream>
 #include "messages.h"
 #include "serverconnection.h"
+#include "userinputhelper.h"
 
 class ClientConsole : public QObject
 {
@@ -23,6 +24,8 @@ public:
 private:
 
     QQueue<Messages::ArmaMessage*> messageQueue; //max 10
+
+    UserInputHelper *mInputHelper;
 
     ServerConnection *mServerConnection;
     QMap<int, Session*> mPeerSessions;
@@ -67,7 +70,7 @@ public slots:
     void loggedInPeersFromServer(QByteArray a);
 
 protected slots:
-    void userInput();
+    void userInput(QString Qline);
 
 
 };

@@ -86,7 +86,8 @@ HEADERS += src/clientconsole.h \
     src/messages.h \
     src/serverconnection.h \
     src/peerconnection.h \
-    src/common.h
+    src/common.h \
+    src/userinputhelper.h
 
 SOURCES += \
     src/client.cpp \
@@ -166,7 +167,8 @@ SOURCES += \
     src/krypto.cpp \
     src/messages.cpp \
     src/serverconnection.cpp \
-    src/peerconnection.cpp
+    src/peerconnection.cpp \
+    src/userinputhelper.cpp
 
 DISTFILES += \
     ../include/cmake_install.cmake \

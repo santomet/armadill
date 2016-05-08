@@ -109,7 +109,6 @@ class SessionKey {
 public:
 	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false), key_enc_uses(0), key_dec_uses(0), key_old_dec_uses(0) {
 		mbedtls_dhm_init(&dhmc);
-        //TODO set dhm_context here
         uchar out[2048];
         size_t len;
 

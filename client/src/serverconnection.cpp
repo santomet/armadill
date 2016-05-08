@@ -51,6 +51,5 @@ void ServerConnection::dataFromServerReady()
     {
         emit gotLoggedInPeers(a);
     }
-    //TODO DEFINE
 }
 
