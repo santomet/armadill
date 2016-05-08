@@ -21,7 +21,8 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 	ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
 	ret.append(Messages::armaSeparator);
 	
-	if (!key.isMyDHCreated()) {
+	QByteArray dh = key.conditionalGetDH();
+	if (dh.length() > 0) {
 		ret.append('A' + Messages::RegularMessageDH);
 		ret.append(Messages::armaSeparator);
 		ret.append(key.getDH().toBase64());
@@ -33,7 +34,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 
 	ret.append(key.protect(message.toUtf8(), ret));
 
-    key.generateKey();
+    if(dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
 	return ret;
 }
 
@@ -95,7 +96,6 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 
 
     QByteArray messageText;
-    QByteArray encryptedData;
 
     //regularMessage
     if (type == RegularMessage) {

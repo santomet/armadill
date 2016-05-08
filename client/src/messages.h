@@ -155,10 +155,11 @@ public:
 				ret.append(QString::number(QDateTime::currentMSecsSinceEpoch()));
 				ret.append(Messages::armaSeparator);
 
-				if (!key.isMyDHCreated()) {
+				QByteArray dh = key.conditionalGetDH();
+				if (dh.length() > 0) {
 					ret.append('A' + Messages::FileMessageDH);
 					ret.append(Messages::armaSeparator);
-					ret.append(key.getDH().toBase64());
+					ret.append(dh.toBase64());
 				}
 				else {
 					ret.append('A' + Messages::FileMessage);
@@ -171,7 +172,7 @@ public:
 				ret.append(Messages::armaSeparator);
 
 				ret.append(key.protect(data, ret));
-				key.generateKey();
+				if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
 
 				//session.send(ret);
 			};
