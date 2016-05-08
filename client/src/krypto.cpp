@@ -12,10 +12,9 @@ Krypto::Krypto()
 
 
 void SessionKey::setDH(QByteArray dh) {
-	dhmUse.lock();
+	std::lock_guard<std::mutex> dhmLock(dhmUse);
 	if (mbedtls_dhm_read_public(&dhmc, toUChar(dh), dh.length())) throw KryptoException("setDH: can't read DH");
 	other = true;
-	dhmUse.unlock();
 }
 
 QByteArray SessionKey::getDH() {
