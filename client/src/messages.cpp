@@ -132,6 +132,8 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
             return false;
         }
         sk.setDH(dh);
+		sk.generateKey();
+
         parsedMessage.messageText = messageText;
     }
 
