@@ -158,24 +158,7 @@ bool Messages::parseMessage(Session &session, ArmaMessage &message, Messages::Re
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Messages::FileSendingContext::FileSendingContext(Session & session, QString path) : session(session), path(path) {
+Messages::FileSendingContext::FileSendingContext(Session & session, QString path, std::function<void(QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) {
 	QFile file(path);
 	if(!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
 	fileSize = file.size();
@@ -189,7 +172,7 @@ bool Messages::FileSendingContext::startSending() {
 	qint64 done = 0;
 
 	for (qint64 i = 0; i < threads; ++i) {
-		workers.push_back(Worker(session, path));
+		workers.push_back(Worker(session, path, dataSender));
 
 		// Load balancer
 		qint64 cChunks = ((chunks - 1) / threads + (((chunks - 1) % threads < i) ? 0 : 1));
@@ -246,7 +229,7 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 		ret.append(key.protect(data, ret));
 		if (dh.length() > 0) key.generateKey(); // Make sure that someone, who did not get DH will not generate new key
 
-		//session.send(ret);
+		dataSender(ret);
 	} while (glen > 0);
 	file.close();
 }

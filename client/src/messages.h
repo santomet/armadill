@@ -132,13 +132,15 @@ public:
 		Session & session;
 		QString path;
 		qint64 fileSize;
+		std::function<void(QByteArray &)> dataSender;
 
 		class Worker {
 			Session & session;
 			QString path;
+			std::function<void(QByteArray &)> dataSender;
 		public:
-			Worker(Session & session, QString path) : session(session), path(path) {};
-			Worker(const Worker & w) : session(w.session), path(w.path) {};
+			Worker(Session & session, QString path, std::function<void(QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) { };
+			Worker(const Worker & w) : session(w.session), path(w.path), dataSender(w.dataSender) {};
 
 			void operator()(qint64 gstart, qint64 glen);
 		};
@@ -148,7 +150,7 @@ public:
 
 	public:
 		static const qint64 maxThreads = 8;
-		FileSendingContext(Session & session, QString path);
+		FileSendingContext(Session & session, QString path, std::function<void(QByteArray &)> dataSender);
 
 		bool startSending();
 	};

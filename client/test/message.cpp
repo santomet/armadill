@@ -194,6 +194,10 @@ TEST_CASE("Performance tests", "[message]") {
 	}
 }
 
+void mDataDebugSender(QByteArray & data) {
+	qDebug() << data.length() << endl;
+}
+
 TEST_CASE("Sending file", "[File sending]") {
 	static const char * path = "test.t";
 	QFile file(path);
@@ -205,7 +209,7 @@ TEST_CASE("Sending file", "[File sending]") {
 
 	TestSession s;
 
-	Messages::FileSendingContext test(s.getS1(), path);
+	Messages::FileSendingContext test(s.getS1(), path, std::function<void(QByteArray &)>(mDataDebugSender));
 	REQUIRE_NOTHROW(test.startSending());
 
 	QThread::sleep(3);
@@ -229,7 +233,7 @@ TEST_CASE("Sending long files", "[File sending]") {
 
 		s.exchangeDH();
 
-		Messages::FileSendingContext test(s.getS1(), path);
+		Messages::FileSendingContext test(s.getS1(), path, std::function<void(QByteArray &)>(mDataDebugSender));
 		REQUIRE_NOTHROW(test.startSending());
 		QThread::sleep(2);
 	}
