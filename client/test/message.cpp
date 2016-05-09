@@ -10,6 +10,14 @@
 #include "../../include/catch.hpp"
 #include <QFile>
 
+/*
+template<class R, class... Args >
+class funcRef<R(Args...)> {
+
+
+};
+*/
+
 template <class C>
 class RefData {
 	bool topLevel;
@@ -99,7 +107,7 @@ class TestSessionHandler {
 	Session & s;
 public:
 	TestSessionHandler(Session & s) : s(s) {};
-	Session & operator()(QString & name) {
+	Session & operator()(const QString & name) {
 		if (name.compare(s.getPartnerName())) throw MessageException("Unknown sender!"); 
 		return s; 
 	};
@@ -109,10 +117,34 @@ class TestDataSender {
 
 public:
 	TestDataSender() {};
-	void operator()(QByteArray & data) {
+	void operator()(const QByteArray & data) {
 		qDebug() << data.length();
 	};
 };
+
+class TestDataSender2 {
+	std::function<Session &(const QString &)> sessionHandler;
+	std::function<void(Messages::MsgType, const Messages::ReceivedMessage &)> callback;
+public:
+	TestDataSender2(std::function<void(Messages::MsgType, const Messages::ReceivedMessage &)> cb, std::function<Session &(const QString &)> s) : callback(cb), sessionHandler(s) {};
+	TestDataSender2(const TestDataSender2 & o) : callback(o.callback), sessionHandler(o.sessionHandler) {};
+
+	void operator()(const QByteArray & data) {
+		Messages::parseMessage(sessionHandler, data, callback);
+	};
+};
+
+class TestDataSender3 {
+	std::function<void(const QByteArray &)> callback;
+public:
+	TestDataSender3(std::function<void(const QByteArray &)> cb) : callback(cb) {};
+	TestDataSender3(const TestDataSender3 & o) : callback(o.callback) {};
+
+	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & data) {
+		callback(data.messageText);
+	};
+};
+
 
 
 TEST_CASE("Key exchange", "[Krypto]") {
@@ -263,7 +295,7 @@ TEST_CASE("Performance tests", "[message]") {
 	}
 }
 
-TEST_CASE("Sending file", "[File sending]") {
+TEST_CASE("Sending file", "[File transfer]") {
 	static const char * path = "test.t";
 	QFile file(path);
 	file.open(QIODevice::WriteOnly);
@@ -281,7 +313,7 @@ TEST_CASE("Sending file", "[File sending]") {
 	file.deleteLater();
 }
 
-TEST_CASE("Sending long files", "[File sending]") {
+TEST_CASE("Sending long files", "[File transfer]") {
 	static const char * path = "test.t";
 	QFile file(path);
 
@@ -300,10 +332,42 @@ TEST_CASE("Sending long files", "[File sending]") {
 
 		Messages::FileSendingContext test(s.getS1(), path, TestDataSender());
 		REQUIRE_NOTHROW(test.startSending());
-		QThread::sleep(2);
 	}
-	QThread::sleep(10);
+	QThread::sleep(5);
 	file.deleteLater();
 }
 
+void helperFunction(Messages::MsgType t, const Messages::ReceivedMessage & data) {
+	qDebug() << data.messageText;
+}
+
+TEST_CASE("Receiving file", "[File transfer]") {
+	static const char * path = "test.t";
+	static const char * path2 = "test_r.t";
+	
+	QFile file(path);
+	file.open(QIODevice::WriteOnly);
+
+	const QString testData = "ORIGINAL MESSAGE WITH SIZE = 32B\nORIGINAL MESSAGE WITH SIZE = 32B";
+	file.write(testData.toUtf8());
+	file.close();
+
+	TestSession s;
+	QByteArray msg;
+
+	Messages::FileReceivingContext testr(s.getS2(), path2);
+	Messages::FileSendingContext test(s.getS1(), path, TestDataSender2(TestDataSender3(testr), TestSessionHandler(s.getS2())));
+	REQUIRE_NOTHROW(test.startSending());
+
+	QThread::sleep(3);
+	file.remove();
+
+	QFile file2(path2);
+	file2.open(QIODevice::ReadOnly);
+	QString t_data = QString::fromUtf8(file2.readAll());
+
+	REQUIRE(t_data == testData);
+	file2.close();
+	file2.remove();
+}
 

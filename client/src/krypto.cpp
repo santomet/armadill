@@ -9,7 +9,7 @@ Krypto::Krypto()
 
 }
 
-
+SessionKey::HelperMpi SessionKey::helper;
 
 void SessionKey::setDH(QByteArray dh) {
 	std::lock_guard<std::mutex> dhmLock(dhmUse);

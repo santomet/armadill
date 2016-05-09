@@ -55,7 +55,7 @@ bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
 	return true;
 }
 
-bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, ArmaMessage &message, std::function<void(MsgType, const ReceivedMessage &)> callback) {
+bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback) {
 	QString senderNick, receiverNick;
 	QByteArray dh;
     QDateTime timestamp;
@@ -164,7 +164,7 @@ QByteArray Messages::addMessageHeader(Session & session, const QByteArray & payl
 
 
 
-Messages::FileSendingContext::FileSendingContext(Session & session, QString path, std::function<void(QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) {
+Messages::FileSendingContext::FileSendingContext(Session & session, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) {
 	QFile file(path);
 	if(!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
 	fileSize = file.size();
@@ -192,9 +192,6 @@ bool Messages::FileSendingContext::startSending() {
 }
 
 void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen) {
-	static std::mutex testLock;
-	std::lock_guard<std::mutex> testLockG(testLock);
-	
 	QFile file(path);
 	file.open(QIODevice::ReadOnly);
 	file.seek(gstart);
@@ -215,5 +212,35 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 
 		dataSender(ret);
 	} while (glen > 0);
+	file.close();
+}
+
+
+
+Messages::FileReceivingContext::FileReceivingContext(Session & session, QString path) : session(session), path(path) {
+	QFile file(path);
+	if (!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
+	fileSize = file.size();
+	file.close();
+}
+
+
+void Messages::FileReceivingContext::parseChunk(const QByteArray & data) {
+	workers.push_back(Worker(session, path, fileSize));
+	futures.push_back(QtConcurrent::run(workers.back(), data));
+}
+
+void Messages::FileReceivingContext::Worker::operator()(QByteArray data) {
+	QList<QByteArray> list = data.split(Messages::armaSeparator);
+
+	qint64 start = list[0].toLongLong();
+	qint64 len = list[1].toLongLong();
+
+	//if (start + len > fileSize) throw MessageException("File chunk out of range.");
+
+	QFile file(path);
+	file.open(QIODevice::ReadWrite);
+	file.seek(start);
+	file.write(data.right(data.length() - (list[0].length() + list[1].length() + 2)));
 	file.close();
 }

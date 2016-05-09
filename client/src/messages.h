@@ -51,6 +51,7 @@ class Messages : public QObject
     Q_OBJECT
 public:
     static const char armaSeparator = '#';
+	static const qint64 maxThreads = 8;
 	static const qint64 maxChunkSize = 2048;
 
 //-----------------------------Structures and types-------------------------------------
@@ -117,7 +118,7 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    bool parseMessage(std::function<Session &(QString & name)> sessions, ArmaMessage &message, std::function<void(MsgType, const ReceivedMessage &)> callback);
+    static bool parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback);
 
 
 
@@ -146,14 +147,14 @@ public:
 		Session & session;
 		QString path;
 		qint64 fileSize;
-		std::function<void(QByteArray &)> dataSender;
+		std::function<void(const QByteArray &)> dataSender;
 
 		class Worker {
 			Session & session;
 			QString path;
 			std::function<void(QByteArray &)> dataSender;
 		public:
-			Worker(Session & session, QString path, std::function<void(QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) { };
+			Worker(Session & session, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) { };
 			Worker(const Worker & w) : session(w.session), path(w.path), dataSender(w.dataSender) {};
 
 			void operator()(qint64 gstart, qint64 glen);
@@ -163,8 +164,7 @@ public:
 		std::vector<QFuture<void>> futures;
 
 	public:
-		static const qint64 maxThreads = 8;
-		FileSendingContext(Session & session, QString path, std::function<void(QByteArray &)> dataSender);
+		FileSendingContext(Session & session, QString path, std::function<void(const QByteArray &)> dataSender);
 
 		bool startSending();
 	};
@@ -173,11 +173,27 @@ public:
 	class FileReceivingContext {
 		Session & session;
 		QString path;
+		qint64 fileSize;
+
+		class Worker {
+			Session & session;
+			QString path;
+			qint64 fileSize;
+		public:
+			Worker(Session & session, QString path, qint64 fileSize) : session(session), path(path), fileSize(fileSize) { };
+			Worker(const Worker & w) : session(w.session), path(w.path), fileSize(fileSize) {};
+
+			void operator()(QByteArray data);
+		};
+
+		std::vector<Worker> workers;
+		std::vector<QFuture<void>> futures;
 
 	public:
-		FileReceivingContext(Session & session, QString path) : session(session) {
+		FileReceivingContext(Session & session, QString path);
 
-		};
+		void parseChunk(const QByteArray & data);
+		void operator()(const QByteArray & data) { parseChunk(data); };
 	};
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
