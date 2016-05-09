@@ -68,6 +68,7 @@ void ClientConnection::readDataFromClient()
 
 bool ClientConnection::parseLoginMessage(QByteArray& message) {
     QString nickname, password;
+    int port;
     bool reg;
     int count = message.count('#');
     if(count!=2)
@@ -80,9 +81,10 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     else
         return false;
 
-    //TODO certificate and port
+    //TODO certificate
     nickname = QString::fromUtf8(list.at(1));
     password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
+    port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
     if(reg)
     {
         if(!mServerManager->newRegistration(nickname, password))
@@ -96,7 +98,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     }
     else
     {
-        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), 000/*TODO: real port*/, "NO_CERT"))
+        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), port, "NO_CERT"))
         {
             this->sendDataToClient("m#LOG_FAILED");
         }

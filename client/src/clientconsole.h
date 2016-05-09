@@ -24,12 +24,16 @@ public:
 private:
 
     QQueue<Messages::ArmaMessage*> messageQueue; //max 10
-
     UserInputHelper *mInputHelper;
 
     ServerConnection *mServerConnection;
+
+    mbedtls_entropy_context mTLS_entropy;
+
+    int mActivePeer;
     QMap<int, Session*> mPeerSessions;
     QMap<int, PeerConnection*> mPeerConnections;
+    QMap<QString, int> mNickConnectionMap;
 
     QStringList mServer;
     QSocketNotifier *mNotifier;
@@ -37,6 +41,8 @@ private:
 
     QList<peer> mOnlinePeerList;
 
+    ArmaTcpPeerServer *mPeerServer;
+    qint16 mListeningPort;
 
     enum ExpectedUserInput
     {
@@ -57,17 +63,34 @@ signals:
     void exitNormal();
     void sendDataToServer(QByteArray a);
 
+    void sendDataToPeer(QByteArray a);
+    void connectionEstablished(PeerConnection *c);
+
 public slots:
     /**
      * @brief init                  initializes what sould be initialized inside the main eventloop
      */
     void init();
+    //client-server
     void serverConnected() {mExpectedInput = LoginOrRegister;}
     void loginSuccess() {qDebug() << "You can load peers from server (p)"; mExpectedInput = Idle;}
     void registrationSuccess() {qDebug() << "You can now log in (l) or register new account(r)"; mExpectedInput = LoginOrRegister;}
     void fail() {qDebug() << "Please try again - login(l) or register(r)"; mExpectedInput = LoginOrRegister;}
-    void peerConnected() {/*TODO*/}
     void loggedInPeersFromServer(QByteArray a);
+
+    //peer
+    void connectToPeer(peer p);
+    void connectionSuccessful(int id); //self-initiated
+    void newRemoteInitiatedConnection(PeerConnection *c);
+    void endConnection(PeerConnection *c); //remote-initiated before established
+    void endConnection(int id); //self-initiated/established
+
+    void dataFromPeerReady(int id, QByteArray a);
+
+    //peerServer
+    void startPeerServer();
+
+
 
 protected slots:
     void userInput(QString Qline);

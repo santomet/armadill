@@ -14,9 +14,13 @@ void ClientConsole::init()
     }
     else
     {
+        mbedtls_entropy_init(&mTLS_entropy); //start an entropy
+        mbedtls_entropy_gather(&mTLS_entropy);
+
         mInputHelper = new UserInputHelper();
         connect(mInputHelper, SIGNAL(inputReady(QString)), this, SLOT(userInput(QString)));
         mMessages = new Messages(nullptr);
+        //server
         mServerConnection = new ServerConnection(mServer.at(0), mServer.at(1).toInt());
         connect(mServerConnection, SIGNAL(connectSuccess()), this, SLOT(serverConnected()));
         connect(mServerConnection, SIGNAL(loginSuccess()), this, SLOT(loginSuccess()));
@@ -24,6 +28,11 @@ void ClientConsole::init()
         connect(mServerConnection, SIGNAL(registrationSuccess()), this, SLOT(registrationSuccess()));
         connect(mServerConnection, SIGNAL(gotLoggedInPeers(QByteArray)), this, SLOT(loggedInPeersFromServer(QByteArray)));
         connect(this, SIGNAL(sendDataToServer(QByteArray)), mServerConnection, SLOT(sendDataToServer(QByteArray)));
+
+        //peerServer
+        startPeerServer();
+        connect(mPeerServer, SIGNAL(newConnection(PeerConnection*)), this )
+
     }
 
 }
@@ -36,6 +45,72 @@ void ClientConsole::loggedInPeersFromServer(QByteArray a)
     {
         qDebug() << "nick: " << p.name << " addr: " << p.address << " port: " << p.listeningPort;
     }
+    qDebug() << "write nickname to connect to peer";
+}
+
+void ClientConsole::connectToPeer(peer p)
+{
+    PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
+    int i = mPeerConnections.size();
+    peerConn->setID(i);
+    mPeerConnections(i, peerConn);
+    Session *s = new Session(mNickName, peer.name, mTLS_entropy);
+    mPeerSessions.insert(i, s);
+    mNickConnectionMap.insert(peer.name, i);
+}
+
+void ClientConsole::connectionSuccessful(int id)
+{
+    mActivePeer = id;
+    QByteArray identifyMessage;
+    identifyMessage.append(Messages::armaSeparator); //only controller messages starts with separator
+    identifyMessage.append("i"); //identification
+    identifyMessage.append(Messages::armaSeparator);
+    identifyMessage.append(mNickName);
+    mExpectedInput = Message;
+    qDebug() << "identification sent, type message";
+}
+
+void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
+{
+    int i = mPeerConnections.size();
+    mPeerConnections(i, c);
+    c->setID(i);
+}
+
+void ClientConsole::dataFromPeerReady(int id, QByteArray a)
+{
+    if(a.at(0) == Messages::armaSeparator)
+    {
+        QList<QByteArray> identifyMessage = a.split(Messages::armaSeparator);
+        if(identifyMessage.at(0) == "i")
+        {
+            mNickConnectionMap.insert(id, identifyMessage.at(1));
+            mPeerSessions.insert(id, new Session(mNickName, mNickConnectionMap.value(id), mTLS_entropy));
+            mExpectedInput = Message;
+            qDebug() << "remote peer identified as: " << mNickConnectionMap.value(id);
+        }
+        else
+            qDebug() << "Unknown identify message";
+    }
+    else
+    {
+        QString parsedMessage;
+        mMessages->parseMessage(mPeerSessions.value(id), a, parsedMessage);
+        qDebug() << parsedMessage;
+    }
+}
+
+
+
+void ClientConsole::startPeerServer()
+{
+    mPeerServer = new ArmaTcpPeerServer(mMessages, mServerConnection);
+    mPeerServer->listen(QHostAddress::Any, 0); //automatically selects the port
+    mListeningPort = mPeerServer->serverPort();
+    connect(mPeerServer, SIGNAL(newRemoteInitiatedConnection(PeerConnection*)), this, SLOT(newRemoteInitiatedConnection(PeerConnection*)));
+    connect(mPeerServer, SIGNAL(endRemoteInitiatedConnection(PeerConnection*)), this, SLOT(endConnection(PeerConnection*)));
+    connect(this, SIGNAL(connectionEstablished(PeerConnection*)), mPeerServer, SLOT(establishedConnection(PeerConnection*)));
 }
 
 void ClientConsole::userInput(QString Qline)
@@ -48,7 +123,21 @@ void ClientConsole::userInput(QString Qline)
     case Idle :
         if(Qline == "p")
             emit sendDataToServer("j");
-        //TODO
+        else
+        {
+            peer peerToConnect = NULL;
+            foreach(peer p, mOnlinePeerList)
+            {
+                if(Qline == p.name)
+                    peerToConnect = p;
+            }
+            if(peerToConnect == NULL)
+            {
+                qDebug() << "selected peer not found";
+            }
+            else
+                connectToPeer(peerToConnect);
+        }
         break;
     case LoginOrRegister :
         if(Qline == "l")
@@ -77,7 +166,7 @@ void ClientConsole::userInput(QString Qline)
     case PasswordLogin :
         mPassword = Qline;
         qDebug() << mNickName << ":" << mPassword;
-        emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, false));
+        emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, mListeningPort, false));
         mExpectedInput = None;
         break;
     case PasswordRegister :

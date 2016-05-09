@@ -120,7 +120,7 @@ public:
     * \param reg                        If it is going to be registration attempt
 	* \return							ArmaMessage which can be sent to server
 	*/
-    ArmaMessage createLoginMessage(QString & name, const QString & password, bool reg = false);
+    ArmaMessage createLoginMessage(QString & name, const QString & password, int port, bool reg = false);
 
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
