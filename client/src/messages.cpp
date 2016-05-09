@@ -1,5 +1,20 @@
 #include "messages.h"
 
+
+
+
+
+
+
+qint64  Messages::FileSendingContext::transferID;
+QMap<qint64, std::shared_ptr<Messages::FileSendingContext>> Messages::FileSendingContext::transfers;
+
+qint64  Messages::FileReceivingContext::transferID;
+QMap<qint64, std::shared_ptr<Messages::FileReceivingContext>> Messages::FileReceivingContext::transfers;
+
+
+
+
 Messages::Messages(peer *peerToConnect = nullptr, QObject *parent) : QObject(parent), mPeer(peerToConnect)
 {
     //here we create peerconnection session
@@ -164,6 +179,57 @@ QByteArray Messages::addMessageHeader(Session & session, const QByteArray & payl
 
 
 
+void Messages::FileSendingContext::sendFile(Session & s, const QString & path, std::function<void(const QByteArray &)> sender) {
+	QByteArray payload;
+	auto it = transfers.insert(++transferID, std::shared_ptr<FileSendingContext>(new FileSendingContext(s, path, sender)));
+
+	payload.append(QByteArray::number(transferID));
+	payload.append(Messages::armaSeparator);
+	payload.append(QByteArray::number((*it)->fileSize));
+
+	sender(Messages::addMessageHeader(s, payload, MsgType::FileContext, MsgType::FileContextDH));
+}
+
+void Messages::FileSendingContext::confirmFile(Session & s, const QByteArray & response) {
+	QList<QByteArray> list = response.split(Messages::armaSeparator);
+
+	qint64 id = list[0].toLongLong();
+	auto it = transfers.find(id);
+	(*it)->destID = list[1].toLongLong();
+	(*it)->startSending();
+}
+
+void Messages::FileReceivingContext::receiveFile(Session & s, const QByteArray & payload, std::function<void(const QByteArray &)> sender) {
+	QList<QByteArray> list = payload.split(Messages::armaSeparator);
+	qint64 id = list[0].toLongLong();
+	qint64 size = list[1].toLongLong();
+
+	QString path = "downloads/";
+	path.append(QString::number(++transferID));
+	path.append(".rec");
+
+	auto it = transfers.insert(transferID, std::shared_ptr<FileReceivingContext>(new FileReceivingContext(s, path)));
+
+	QByteArray response;
+	response.append(QByteArray::number(id));
+	response.append(Messages::armaSeparator);
+	response.append(QByteArray::number(transferID));
+
+	sender(Messages::addMessageHeader(s, response, MsgType::FileResponse, MsgType::FileResponseDH));
+}
+
+void Messages::FileReceivingContext::receiveChunk(Session & s, const QByteArray & payload) {
+	QList<QByteArray> list = payload.split(Messages::armaSeparator);
+
+	qint64 id = list[0].toLongLong();
+	qint64 start = list[1].toLongLong();
+	qint64 len = list[2].toLongLong();
+
+	auto it = transfers.find(id);
+	(*it)->parseChunk(start, len, payload.right(payload.length() - (list[0].length() + list[1].length() + list[2].length() + 3)));
+}
+
+
 Messages::FileSendingContext::FileSendingContext(Session & session, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) {
 	QFile file(path);
 	if(!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
@@ -178,7 +244,7 @@ bool Messages::FileSendingContext::startSending() {
 	qint64 done = 0;
 
 	for (qint64 i = 0; i < threads; ++i) {
-		workers.push_back(Worker(session, path, dataSender));
+		workers.push_back(Worker(session, destID, path, dataSender));
 
 		// Load balancer
 		qint64 cChunks = ((chunks - 1) / threads + (((chunks - 1) % threads < i) ? 0 : 1));
@@ -202,6 +268,8 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 		glen -= len;
 
 		QByteArray payload;
+		payload.append(QString::number(destID));
+		payload.append(Messages::armaSeparator);
 		payload.append(QString::number(start));
 		payload.append(Messages::armaSeparator);
 		payload.append(QString::number(len));
@@ -215,8 +283,6 @@ void Messages::FileSendingContext::Worker::operator()(qint64 gstart, qint64 glen
 	file.close();
 }
 
-
-
 Messages::FileReceivingContext::FileReceivingContext(Session & session, QString path) : session(session), path(path) {
 	QFile file(path);
 	if (!file.open(QIODevice::ReadWrite)) throw MessageException("Unable to open file!");
@@ -225,22 +291,28 @@ Messages::FileReceivingContext::FileReceivingContext(Session & session, QString 
 }
 
 
-void Messages::FileReceivingContext::parseChunk(const QByteArray & data) {
+void Messages::FileReceivingContext::parseChunk(qint64 start, qint64 len, const QByteArray & data) {
 	workers.push_back(Worker(session, path, fileSize));
-	futures.push_back(QtConcurrent::run(workers.back(), data));
+	futures.push_back(QtConcurrent::run(workers.back(), start, len, data));
 }
 
-void Messages::FileReceivingContext::Worker::operator()(QByteArray data) {
+void Messages::FileReceivingContext::parseChunk(const QByteArray & data) {
 	QList<QByteArray> list = data.split(Messages::armaSeparator);
 
 	qint64 start = list[0].toLongLong();
 	qint64 len = list[1].toLongLong();
+
+	parseChunk(start, len, data.right(data.length() - (list[0].length() + list[1].length() + 2)));
+}
+
+void Messages::FileReceivingContext::Worker::operator()(qint64 start, qint64 len, QByteArray data) {
+	
 
 	//if (start + len > fileSize) throw MessageException("File chunk out of range.");
 
 	QFile file(path);
 	file.open(QIODevice::ReadWrite);
 	file.seek(start);
-	file.write(data.right(data.length() - (list[0].length() + list[1].length() + 2)));
+	file.write(data);
 	file.close();
 }

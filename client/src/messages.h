@@ -70,13 +70,19 @@ public:
     typedef QByteArray FileChunkDecrypted;
 
 
+
+	// Odd numbers are with DH, even are without DH
     enum MsgType
     {
 		PureDH = 0,
         RegularMessage = 2,
         RegularMessageDH = 3,
         FileMessage = 4,
-        FileMessageDH = 5
+        FileMessageDH = 5,
+		FileContext = 6,
+		FileContextDH = 7,
+		FileResponse = 8,
+		FileResponseDH = 9
     };
 
     struct FileContext
@@ -144,18 +150,26 @@ public:
 
 //---------------------------Files---------------------------------------------------
 	class FileSendingContext {
+		static qint64  transferID;
+		static QMap<qint64, std::shared_ptr<FileSendingContext>> transfers;
+	public:
+		static void sendFile(Session & s, const QString & path, std::function<void(const QByteArray &)>);
+		static void confirmFile(Session & s, const QByteArray & response);
+	private:
 		Session & session;
 		QString path;
 		qint64 fileSize;
+		qint64 destID;
 		std::function<void(const QByteArray &)> dataSender;
 
 		class Worker {
 			Session & session;
 			QString path;
+			qint64 destID;
 			std::function<void(QByteArray &)> dataSender;
 		public:
-			Worker(Session & session, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), path(path), dataSender(dataSender) { };
-			Worker(const Worker & w) : session(w.session), path(w.path), dataSender(w.dataSender) {};
+			Worker(Session & session, qint64 destID, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), destID(destID), path(path), dataSender(dataSender) { };
+			Worker(const Worker & w) : session(w.session), destID(w.destID), path(w.path), dataSender(w.dataSender) {};
 
 			void operator()(qint64 gstart, qint64 glen);
 		};
@@ -171,9 +185,16 @@ public:
 
 
 	class FileReceivingContext {
+		static qint64  transferID;
+		static QMap<qint64, std::shared_ptr<FileReceivingContext>> transfers;
+	public:
+		static void receiveFile(Session & s, const QByteArray & payload, std::function<void(const QByteArray &)> sender);
+		static void receiveChunk(Session & s, const QByteArray & payload);
+	private:
 		Session & session;
 		QString path;
 		qint64 fileSize;
+		qint64 originID;
 
 		class Worker {
 			Session & session;
@@ -183,7 +204,7 @@ public:
 			Worker(Session & session, QString path, qint64 fileSize) : session(session), path(path), fileSize(fileSize) { };
 			Worker(const Worker & w) : session(w.session), path(w.path), fileSize(fileSize) {};
 
-			void operator()(QByteArray data);
+			void operator()(qint64 start, qint64 len, QByteArray data);
 		};
 
 		std::vector<Worker> workers;
@@ -193,7 +214,8 @@ public:
 		FileReceivingContext(Session & session, QString path);
 
 		void parseChunk(const QByteArray & data);
-		void operator()(const QByteArray & data) { parseChunk(data); };
+		void parseChunk(qint64 start, qint64 len, const QByteArray & data);
+		void operator()(qint64 start, qint64 len, const QByteArray & data) { parseChunk(start, len, data); };
 	};
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
@@ -226,16 +248,6 @@ public:
     Krypto mKrypto;
     peer *mPeer;    //actual peer we are communicating with
 
-private:
-    /*!
-     * \brief parseFileMessage          Parses File data block (creates file for first one)
-     * \param encryptedData
-     * \return
-     */
-    bool parseFileMessage(const FileChunkEncrypted &fileChunk);
-
-	
-    ArmaMessage* createFileMessage(FileContext *context, QString eceiver);
 };
 
 class MessageException : public std::runtime_error {

@@ -135,13 +135,19 @@ public:
 };
 
 class TestDataSender3 {
-	std::function<void(const QByteArray &)> callback;
+	std::function<void(qint64, qint64, const QByteArray &)> callback;
 public:
-	TestDataSender3(std::function<void(const QByteArray &)> cb) : callback(cb) {};
+	TestDataSender3(std::function<void(qint64, qint64, const QByteArray &)> cb) : callback(cb) {};
 	TestDataSender3(const TestDataSender3 & o) : callback(o.callback) {};
 
 	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & data) {
-		callback(data.messageText);
+		QList<QByteArray> list = data.messageText.split(Messages::armaSeparator);
+
+		qint64 id = list[0].toLongLong();
+		qint64 start = list[1].toLongLong();
+		qint64 len = list[2].toLongLong();
+
+		callback(start, len, data.messageText.right(data.messageText.length() - (list[0].length() + list[1].length() + list[2].length() + 3)));
 	};
 };
 
@@ -310,7 +316,7 @@ TEST_CASE("Sending file", "[File transfer]") {
 	REQUIRE_NOTHROW(test.startSending());
 
 	QThread::sleep(3);
-	file.deleteLater();
+	file.remove();
 }
 
 TEST_CASE("Sending long files", "[File transfer]") {
@@ -334,7 +340,7 @@ TEST_CASE("Sending long files", "[File transfer]") {
 		REQUIRE_NOTHROW(test.startSending());
 	}
 	QThread::sleep(5);
-	file.deleteLater();
+	file.remove();
 }
 
 void helperFunction(Messages::MsgType t, const Messages::ReceivedMessage & data) {
