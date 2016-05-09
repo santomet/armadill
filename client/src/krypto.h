@@ -14,13 +14,15 @@
 #include "../include/mbedtls/asn1.h"
 #include "../include/mbedtls/entropy.h"
 #include "../include/mbedtls/ctr_drbg.h"
-
+#include "../include/mbedtls/rsa.h"
+#include "../include/mbedtls/pk.h"
 
 #define ENCRYPTION_KEY_SIZE 256
 #define TAG_LENGTH	16
 #define IV_LENGTH	12
 #define MAX_MESSAGES_WITH_ONE_KEY 10
-
+#define RSA_SIZE 2048
+#define RSA_EXPONENT 65537
 
 class Krypto    : public QObject
 {
@@ -35,26 +37,23 @@ public:
      * \brief createCert        Creates a short-term private key and certificate request
      *                          for server to sign
      *
-     * \param priv              QString in wich base64 private key will be written to
+     * \param priv              QByteArray where PEM encoded private key will be written
      *                          (QString will be overwritten)
      *
-     * \param req               QString in which base64 request will be written to
+     * \param req               QByteArray where PEM encoded request will be written
      *                          (QString will be overwritten)
-     *
-     * \param rand              Seed for random number generator
-     *                          (should be based on user input like in Kleopatra)
      *
      * \param common            Common name for certificate
      */
-    bool createCert(QString &priv, QString &req, const int rand, const QString common);
+    bool createCert(QByteArray &priv, QByteArray &req, const QString common);
 
     /*!
      * \brief verifyCert        Verifies signature
-     * \param pubToVerify       base64 certificate to verify
-     * \param pubCA             base64 certificate which should have signed pubToVerify
+     * \param pubToVerify       PEM certificate to verify
+     * \param pubCA             PEM certificate which should have signed pubToVerify
      * \return                  True if pubToVerify is properly signed by pubCA
      */
-    bool verifyCert(const QString pubToVerify, const QString pubCA);
+    bool verifyCert(const QByteArray pubToVerify, const QByteArray pubCA);
 //---------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------

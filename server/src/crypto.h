@@ -6,10 +6,60 @@
 #include "../../include/mbedtls/base64.h"
 #include "../../include/mbedtls/entropy.h"
 #include "../../include/mbedtls/ctr_drbg.h"
+#include "../../include/mbedtls/x509_crt.h"
+#include "../../include/mbedtls/x509_csr.h"
+
 
 #include <cstring>
 #include <string>
+#include <QString>
+#include <QDateTime>
 
+#define SERVER_CERT_FILE "server.crt"
+#define SERVER_KEY_FILE "server.key"
+
+class CryptoException : public std::runtime_error {
+public:
+	CryptoException(const char * msg) : std::runtime_error(msg) {};
+};
+
+class CertificateManager {
+private:
+	mbedtls_entropy_context entropy;
+	mbedtls_pk_context server_key;
+	mbedtls_x509_crt server_crt;
+public:
+	CertificateManager() {
+		mbedtls_entropy_init(&entropy);
+		mbedtls_entropy_gather(&entropy);
+		//TODO: load server key
+		if (mbedtls_pk_parse_keyfile(&server_key, SERVER_KEY_FILE, nullptr) != 0)
+		{
+			throw CryptoException("Unable to load server key.");
+		}
+		//TODO: load server crt
+		if (mbedtls_x509_crt_parse_file(&server_crt, SERVER_CERT_FILE) != 0)
+		{
+			throw CryptoException("Unable to load server certificate.");
+		}
+	}
+	~CertificateManager() {
+		mbedtls_entropy_free(&entropy);
+		mbedtls_x509_crt_free(&server_crt);
+		mbedtls_pk_free(&server_key);
+	}
+	/*!
+	* \brief createCert        Creates a certificate from request
+	*
+	* \param userName          QString with name of user
+	*
+	* \param req               QByteArray with PEM encoded request
+	*
+	* \param cert              QByteArray where PEM encoded certificate will be written
+	*							(QByteArray will be overwritten)
+	*/
+	bool createCert(QString userName, QByteArray req, QByteArray& cert);
+};
 
 class PasswordManager {
 	mbedtls_entropy_context entropy;
