@@ -2,6 +2,8 @@
 #define MESSAGES_H
 
 #include <functional>
+#include <memory>
+
 #include <QObject>
 #include "krypto.h"
 #include "peerconnection.h"
