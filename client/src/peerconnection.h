@@ -8,14 +8,18 @@
 #include "messages.h"
 #include "serverconnection.h"
 
-class ServerConnection; //we are going to use our certificate from here
+//class ServerConnection; //we are going to use our certificate from here
 
 
+/**
+ * @brief The PeerConnection class                      This class is managing (established) connection with another peer. Can be initiated by this peer (directly creating the socket)
+ *                                                      or by remote peer (via server) All data construction/parsing for communication is made outside the class...
+ */
 class PeerConnection : public QObject
 {
     Q_OBJECT
 public:
-    explicit PeerConnection(qintptr soc = 0, peer mPeer = NULL, ServerConnection *server = nullptr, QObject *parent = 0);
+    explicit PeerConnection(qintptr soc = 0, peer _peer = {}, ServerConnection *server = nullptr, QObject *parent = 0);
 
     void sendData(QByteArray d);
 
@@ -28,7 +32,7 @@ public:
     QString getPeerAddress() {return mPeerAddress;}
     //setters
     void setID(int id) {mID = id;}
-    void setPeer(peer *p) {mPeer = p;}
+    void setPeer(peer p) {mPeer = p;}
     void establish() {mEstablished = true;}
 
 private:
@@ -53,7 +57,6 @@ signals:
 public slots:
     void init();
     void sendDataToPeer(QByteArray a);
-    void readData();
 private slots:
     void connectionError(QAbstractSocket::SocketError error);
     void connectionSuccess() {emit peerConnected(mID);}
@@ -62,11 +65,16 @@ private slots:
 
 };
 
+
+/**
+ * @brief The ArmaTcpPeerServer class                   This is simple server designed to work with P2P. After identification of the remotely-connected peer that particular
+ *                                                      socket is no longer maintained by this class
+ */
 class ArmaTcpPeerServer : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit ArmaTcpPeerServer(Messages *m, ServerConnection *s, QObject *parent) : QTcpServer(parent), mMessages(m),
+    explicit ArmaTcpPeerServer(ServerConnection *s, QObject *parent = 0) : QTcpServer(parent),
         mServerConnection(s)
     {}
 
@@ -74,19 +82,19 @@ public:
     QList<PeerConnection*> mConnections; //only connections initiated by other peer
 
 signals:
-    newRemoteInitiatedConnection(PeerConnection *c);
-    endRemoteInitiatedConnection(PeerConnection *c);
+    void newRemoteInitiatedConnection(PeerConnection *c);
+    void endRemoteInitiatedConnection(PeerConnection *c);
 
 public slots:
-    void deleteConnection(PeerConnection *c) {mConnections.removeOne(c); emit endConnection(c);}
-    void establishedConnection(PeerConnection *c) {disconnect(c, 0, this, 0); mConnections.removeOne(c);}
+
+    void deleteConnection(PeerConnection *c) {mConnections.removeOne(c); emit endRemoteInitiatedConnection(c);} //for ending the connection that has not been established yet
+    void establishedConnection(PeerConnection *c) {disconnect(c, 0, this, 0); mConnections.removeOne(c);}   //when the connection is established (peer successfully identifies itself) we forget him
 protected:
-    void incomingConnection(qintptr handle) override {PeerConnection *c = new PeerConnection(handle, nullptr, mServerConnection);
+    void incomingConnection(qintptr handle) override {PeerConnection *c = new PeerConnection(handle, {}, mServerConnection); //creating PeerConnection with empty peer
                                                      mConnections.append(c);
                                                      emit newRemoteInitiatedConnection(c);
                                                      connect(c, SIGNAL(done(PeerConnection*)), this, SLOT(deleteConnection(PeerConnection*)), Qt::QueuedConnection);
                                                      }
-    Messages *mMessages;
     ServerConnection *mServerConnection;
 };
 #endif // PEERCONNECTION_H

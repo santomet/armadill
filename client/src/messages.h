@@ -19,6 +19,10 @@
 #include <QJsonDocument>
 #include <QtConcurrent>
 
+
+/**
+ * @brief The Session class                        Basically a messaging session, different for every peer. Works with DH
+ */
 class Session {
 	QString myName;
 	QString otherName;
@@ -48,6 +52,9 @@ public:
 };
 
 
+/**
+ * @brief The Messages class                    Originally intended to be used as session (separate object for every peer) but somehow diverted into a namespace...
+ */
 class Messages : public QObject
 {
     Q_OBJECT

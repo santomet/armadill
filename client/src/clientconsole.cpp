@@ -31,7 +31,7 @@ void ClientConsole::init()
 
         //peerServer
         startPeerServer();
-        connect(mPeerServer, SIGNAL(newConnection(PeerConnection*)), this )
+//        connect(mPeerServer, SIGNAL(newConnection(PeerConnection*)), this );
 
     }
 
@@ -53,10 +53,10 @@ void ClientConsole::connectToPeer(peer p)
     PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
     int i = mPeerConnections.size();
     peerConn->setID(i);
-    mPeerConnections(i, peerConn);
-    Session *s = new Session(mNickName, peer.name, mTLS_entropy);
+    mPeerConnections.insert(i, peerConn);
+    Session *s = new Session(mNickName, p.name, &mTLS_entropy);
     mPeerSessions.insert(i, s);
-    mNickConnectionMap.insert(peer.name, i);
+    mNickConnectionMap.insert(p.name, i);
 }
 
 void ClientConsole::connectionSuccessful(int id)
@@ -70,13 +70,13 @@ void ClientConsole::connectionSuccessful(int id)
     emit sendDataToPeer(identifyMessage);
     mExpectedInput = Message;
     qDebug() << "identification sent, type message";
-    emit sendDataToPeer(Messages.addMessageHeader(mPeerSessions.value(id), QString(""), Messages::MsgType::PureDH));
+    emit sendDataToPeer(mMessages->addMessageHeader(*(mPeerSessions.value(id)), QString("").toUtf8(), Messages::MsgType::PureDH, Messages::MsgType::PureDH));
 }
 
 void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
 {
     int i = mPeerConnections.size();
-    mPeerConnections(i, c);
+    mPeerConnections.insert(i, c);
     c->setID(i);
 }
 
@@ -87,10 +87,11 @@ void ClientConsole::dataFromPeerReady(int id, QByteArray a)
         QList<QByteArray> identifyMessage = a.split(Messages::armaSeparator);
         if(identifyMessage.at(0) == "i")
         {
-            mNickConnectionMap.insert(id, identifyMessage.at(1));
-            mPeerSessions.insert(id, new Session(mNickName, mNickConnectionMap.value(id), mTLS_entropy));
+            QString nick = identifyMessage.at(1);
+            mNickConnectionMap.insert(nick, id);
+            mPeerSessions.insert(id, new Session(mNickName, nick, &mTLS_entropy));
             mExpectedInput = Message;
-            qDebug() << "remote peer identified as: " << mNickConnectionMap.value(id);
+            qDebug() << "remote peer identified as: " << nick;
         }
         else
             qDebug() << "Unknown identify message";
@@ -98,7 +99,7 @@ void ClientConsole::dataFromPeerReady(int id, QByteArray a)
     else
     {
         QString parsedMessage;
-        mMessages->parseMessage(mPeerSessions.value(id), a, parsedMessage);
+   //TODO: funktor?! //    mMessages->parseMessage(mPeerSessions.value(id), a, parsedMessage);
         qDebug() << parsedMessage;
     }
 }
@@ -107,7 +108,7 @@ void ClientConsole::dataFromPeerReady(int id, QByteArray a)
 
 void ClientConsole::startPeerServer()
 {
-    mPeerServer = new ArmaTcpPeerServer(mMessages, mServerConnection);
+    mPeerServer = new ArmaTcpPeerServer(mServerConnection);
     mPeerServer->listen(QHostAddress::Any, 0); //automatically selects the port
     mListeningPort = mPeerServer->serverPort();
     connect(mPeerServer, SIGNAL(newRemoteInitiatedConnection(PeerConnection*)), this, SLOT(newRemoteInitiatedConnection(PeerConnection*)));
@@ -127,13 +128,13 @@ void ClientConsole::userInput(QString Qline)
             emit sendDataToServer("j");
         else
         {
-            peer peerToConnect = NULL;
+            peer peerToConnect = {};
             foreach(peer p, mOnlinePeerList)
             {
                 if(Qline == p.name)
                     peerToConnect = p;
             }
-            if(peerToConnect == NULL)
+            if(peerToConnect.name.isEmpty())
             {
                 qDebug() << "selected peer not found";
             }
@@ -142,7 +143,7 @@ void ClientConsole::userInput(QString Qline)
         }
         break;
     case Message:
-        emit sendDataToPeer(Messages.createRegularMessage(mPeerSessions.value(mActivePeer), Qline));
+        //TODO: WTF funktor //emit sendDataToPeer(mMessages->createRegularMessage(mPeerSessions.value(mActivePeer), Qline));
         break;
     case LoginOrRegister :
         if(Qline == "l")

@@ -1,9 +1,9 @@
 #include "peerconnection.h"
 
-PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server, QObject *parent = 0)
+PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server, QObject *parent)
     : QObject(parent), mPeer(_peer), mServer(server), mSocDescriptor(soc)
 {
-    if(soc == 0 && peer == NULL)
+    if(soc == 0 && mPeer.name.isEmpty())
     {
         qDebug() << "[ERROR] Creating a connection to peer: cannot call empty constructor!";
         return;
@@ -30,7 +30,7 @@ void PeerConnection::init()
     else
     {
         connect(mSoc, SIGNAL(connected()), this, SLOT(connectionSuccess()));
-        mSoc->connectToHost(mPeer->address, mPeer->listeningPort);
+        mSoc->connectToHost(mPeer.address, mPeer.listeningPort);
     }
     mPeerAddress = mSoc->peerAddress().toString();
     mPeerPort = mSoc->peerPort();

@@ -23,27 +23,43 @@ public:
 
 private:
 
-    QQueue<Messages::ArmaMessage*> messageQueue; //max 10
+    /**
+     * @brief mInputHelper                  stdin reading cycle in separate thread
+     */
     UserInputHelper *mInputHelper;
 
+    /**
+     * @brief mServerConnection             our connection to the server
+     */
     ServerConnection *mServerConnection;
 
-    mbedtls_entropy_context mTLS_entropy;
+    mbedtls_entropy_context mTLS_entropy; //entropy
 
-    int mActivePeer;
+    int mActivePeer;    //peer which we are communicating with (no multiple chats)
+
+    /**
+     * @brief mPeerSessions, mPeerConnections, mNickConnectionMap               peer identifying system (sessions may not be used??)
+     */
     QMap<int, Session*> mPeerSessions;
     QMap<int, PeerConnection*> mPeerConnections;
     QMap<QString, int> mNickConnectionMap;
 
-    QStringList mServer;
-    QSocketNotifier *mNotifier;
-    Messages *mMessages;
+    QStringList mServer;    //server properties from argument parser
+    QSocketNotifier *mNotifier;         //obsolete notifier for unix stdin
 
+    Messages *mMessages;        //this is now common everywhere. Originally intended to be one object per connection... somehow diverted
+
+    /**
+     * @brief mOnlinePeerList               list of logged in peers obtained form server
+     */
     QList<peer> mOnlinePeerList;
 
     ArmaTcpPeerServer *mPeerServer;
     qint16 mListeningPort;
 
+    /**
+     * @brief The ExpectedUserInput enum    used to distinguish what we are expecting from user
+     */
     enum ExpectedUserInput
     {
         None,
@@ -82,8 +98,8 @@ public slots:
     void connectToPeer(peer p);
     void connectionSuccessful(int id); //self-initiated
     void newRemoteInitiatedConnection(PeerConnection *c);
-    void endConnection(PeerConnection *c); //remote-initiated before established
-    void endConnection(int id); //self-initiated/established
+    void endConnection(PeerConnection *c) {} //remote-initiated before established
+    void endConnection(int id) {} //self-initiated/established //TODO both
 
     void dataFromPeerReady(int id, QByteArray a);
 
