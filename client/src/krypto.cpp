@@ -9,7 +9,61 @@ Krypto::Krypto()
 
 }
 
+bool Krypto::createCert(QByteArray &priv, QByteArray &request, const QString common) {
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	mbedtls_pk_context pk; //rsa key pair
+	mbedtls_x509write_csr req;
+	unsigned char output[4096];
+	mbedtls_pk_init(&pk);
+	mbedtls_pk_setup(&pk, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
 
+	//generate RSA pair
+	const char *pers = "rsa_genkey";
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_entropy_init(&entropy);
+	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,(const unsigned char *)pers,strlen(pers))
+		!= 0)
+	{
+		throw new KryptoException("Generating entropy for RSA pair failed.");
+	}
+
+	
+	if (mbedtls_rsa_gen_key(mbedtls_pk_rsa(pk), mbedtls_ctr_drbg_random, &ctr_drbg, RSA_SIZE, RSA_EXPONENT)
+		!= 0)
+	{
+		throw new KryptoException("Generating RSA pair failed.");
+	}
+
+	//generate cert request
+
+	mbedtls_x509write_csr_init(&req);
+	mbedtls_x509write_csr_set_md_alg(&req, MBEDTLS_MD_SHA256);
+	
+	mbedtls_x509write_csr_set_subject_name(&req, common.toStdString().c_str());
+	mbedtls_x509write_csr_set_key(&req, &pk);
+
+	//exporting key and cert req
+
+	memset(output, 0, 4096);
+	mbedtls_x509write_csr_pem(&req, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg);
+	request = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+	memset(output, 0, 4096);
+	mbedtls_pk_write_key_pem(&pk, output, 4096);
+	priv = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+
+	//clean
+	mbedtls_pk_free(&pk);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
+
+	return true;
+}
+
+bool Krypto::verifyCert(const QByteArray pubToVerify, const QByteArray pubCA) {
+	//TODO
+	return true;
+}
 
 void SessionKey::setDH(QByteArray dh) {
 	if (mbedtls_dhm_read_public(&dhmc, toUChar(dh), dh.length())) throw KryptoException("setDH: can't read DH");
