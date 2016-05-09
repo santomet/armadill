@@ -67,8 +67,10 @@ void ClientConsole::connectionSuccessful(int id)
     identifyMessage.append("i"); //identification
     identifyMessage.append(Messages::armaSeparator);
     identifyMessage.append(mNickName);
+    emit sendDataToPeer(identifyMessage);
     mExpectedInput = Message;
     qDebug() << "identification sent, type message";
+    emit sendDataToPeer(Messages.addMessageHeader(mPeerSessions.value(id), QString(""), Messages::MsgType::PureDH));
 }
 
 void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
@@ -138,6 +140,9 @@ void ClientConsole::userInput(QString Qline)
             else
                 connectToPeer(peerToConnect);
         }
+        break;
+    case Message:
+        emit sendDataToPeer(Messages.createRegularMessage(mPeerSessions.value(mActivePeer), Qline));
         break;
     case LoginOrRegister :
         if(Qline == "l")

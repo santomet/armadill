@@ -97,7 +97,28 @@ bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, c
 
     QByteArray messageText;
 
-	if (type % 2) {
+    if(type == Messages::MsgType::PureDH)
+    {
+        dh = QByteArray::fromBase64(list[4]);
+
+        SessionKey& sk = session.getKey();
+
+        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
+        QByteArray messageText;
+        try {
+            QByteArray a1 = message.left(contextDataLength);
+            QByteArray a2 = message.right(message.length() - contextDataLength);
+            messageText = sk.unprotect(a2, a1);
+        }
+        catch (KryptoException e) {
+            return false;
+        }
+        sk.setDH(dh);
+        sk.generateKey();
+
+        parsedMessage.messageText = messageText;
+    }
+    else if (type % 2) {
 		if (list.size() < 6) throw MessageException("incomplete message");
 		dh = QByteArray::fromBase64(list[4]);
 

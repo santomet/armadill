@@ -127,6 +127,14 @@ public:
     static bool parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback);
 
 
+    /*!
+     * \brief addMessageHeader
+     * \param session
+     * \param payload
+     * \param type                      We don't need DH
+     * \param typeDH                    we neeeeed!
+     * \return
+     */
 
 	static QByteArray addMessageHeader(Session & session, const QByteArray & payload, Messages::MsgType type, Messages::MsgType typeDH);
 
