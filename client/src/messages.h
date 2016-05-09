@@ -120,7 +120,19 @@ public:
     ~Messages();
 
 
+	static void callbackHandler(Session & session, MsgType type, const ReceivedMessage & payload) {
+		switch (type) {
+		case RegularMessage, RegularMessageDH:
 
+			break;
+		case FileMessage, FileMessageDH:
+			FileReceivingContext::receiveChunk(session, payload.messageText);
+			break;
+		case FileContext, FileContextDH:
+			// FileReceivingContext::receiveFile(session, payload, );
+			break;
+		}
+	};
 
 
 
@@ -133,7 +145,7 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    static bool parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback);
+    static bool parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(Session &, MsgType, const ReceivedMessage &)> callback);
 
 
     /*!

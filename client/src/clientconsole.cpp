@@ -80,6 +80,13 @@ void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
     c->setID(i);
 }
 
+Session & sessionHandler(ClientConsole & c, const QString & nick) {
+	auto it = c.mNickConnectionMap.find(nick);
+	int id = *it;
+	auto it2 = c.mPeerSessions.find(id);
+	return **it2;
+}
+
 void ClientConsole::dataFromPeerReady(int id, QByteArray a)
 {
     if(a.at(0) == Messages::armaSeparator)
@@ -100,6 +107,7 @@ void ClientConsole::dataFromPeerReady(int id, QByteArray a)
     {
         QString parsedMessage;
    //TODO: funktor?! //    mMessages->parseMessage(mPeerSessions.value(id), a, parsedMessage);
+		Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, Messages::callbackHandler);
         qDebug() << parsedMessage;
     }
 }

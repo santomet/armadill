@@ -72,7 +72,7 @@ bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
 	return true;
 }
 
-bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback) {
+bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(Session &, MsgType, const ReceivedMessage &)> callback) {
 	QString senderNick, receiverNick;
 	QByteArray dh;
     QDateTime timestamp;
@@ -117,6 +117,7 @@ bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, c
         sk.generateKey();
 
         parsedMessage.messageText = messageText;
+		return true;
     }
     else if (type % 2) {
 		if (list.size() < 6) throw MessageException("incomplete message");
@@ -155,7 +156,7 @@ bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, c
         parsedMessage.messageText = messageText;
     }
 
-	callback(type, parsedMessage);
+	callback(session, type, parsedMessage);
     return true;
 }
 

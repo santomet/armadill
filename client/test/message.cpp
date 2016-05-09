@@ -54,7 +54,7 @@ public:
 	TestParseIntercept(const TestParseIntercept & o) : checkType(o.checkType), type(o.type), data(o.data) {};
 	~TestParseIntercept() {};
 
-	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & payload) {
+	void operator()(Session & session, Messages::MsgType t, const Messages::ReceivedMessage & payload) {
 		if (checkType && type != t) throw MessageException("Wrong type returned!");
 		data = payload;
 	};
@@ -124,9 +124,9 @@ public:
 
 class TestDataSender2 {
 	std::function<Session &(const QString &)> sessionHandler;
-	std::function<void(Messages::MsgType, const Messages::ReceivedMessage &)> callback;
+	std::function<void(Session &, Messages::MsgType, const Messages::ReceivedMessage &)> callback;
 public:
-	TestDataSender2(std::function<void(Messages::MsgType, const Messages::ReceivedMessage &)> cb, std::function<Session &(const QString &)> s) : callback(cb), sessionHandler(s) {};
+	TestDataSender2(std::function<void(Session &, Messages::MsgType, const Messages::ReceivedMessage &)> cb, std::function<Session &(const QString &)> s) : callback(cb), sessionHandler(s) {};
 	TestDataSender2(const TestDataSender2 & o) : callback(o.callback), sessionHandler(o.sessionHandler) {};
 
 	void operator()(const QByteArray & data) {
@@ -140,7 +140,7 @@ public:
 	TestDataSender3(std::function<void(qint64, qint64, const QByteArray &)> cb) : callback(cb) {};
 	TestDataSender3(const TestDataSender3 & o) : callback(o.callback) {};
 
-	void operator()(Messages::MsgType t, const Messages::ReceivedMessage & data) {
+	void operator()(Session & s, Messages::MsgType t, const Messages::ReceivedMessage & data) {
 		QList<QByteArray> list = data.messageText.split(Messages::armaSeparator);
 
 		qint64 id = list[0].toLongLong();

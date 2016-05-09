@@ -75,6 +75,8 @@ private:
     ExpectedUserInput mExpectedInput{None};
     QString mNickName, mPassword;
 
+	friend Session & sessionHandler(ClientConsole & c, const QString &);
+
 signals:
     void exitNormal();
     void sendDataToServer(QByteArray a);
