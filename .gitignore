@@ -76,3 +76,7 @@ server/Win32/*
 
 
 *.lastcodeanalysissucceeded
+*.smproj
+*.opendb
+*.db
+*.t

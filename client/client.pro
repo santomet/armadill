@@ -1,8 +1,9 @@
-QT += core testlib network
+QT += core testlib network concurrent
 QT -= gui
 
 CONFIG += console
 CONFIG -= app_bundle
+CONFIG -= flat
 
 unix {
 	QMAKE_CXX = g++-4.8
@@ -162,6 +163,7 @@ SOURCES += \
     ../include/x509write_csr.c \
     ../include/xtea.c \
     test/utest.cpp \
+	test/message.cpp \
     src/krypto.cpp \
     src/messages.cpp \
     src/serverconnection.cpp \

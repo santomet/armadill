@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QtTest/QTest>
-#include "../src/clientconsole.h"
 
 class UTest
 {

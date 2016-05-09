@@ -1,6 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include <functional>
 #include <QObject>
 #include "krypto.h"
 #include "peerconnection.h"
@@ -14,6 +15,7 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QJsonDocument>
+#include <QtConcurrent>
 
 class Session {
 	QString myName;
@@ -21,6 +23,8 @@ class Session {
     SessionKey key;
 public:
     Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
+
+	virtual ~Session() {};
 
 	/*!
 	* \brief getMyName
@@ -46,8 +50,9 @@ class Messages : public QObject
 {
     Q_OBJECT
 public:
-    const char armaSeparator = '#';
-
+    static const char armaSeparator = '#';
+	static const qint64 maxThreads = 8;
+	static const qint64 maxChunkSize = 2048;
 
 //-----------------------------Structures and types-------------------------------------
     /*!
@@ -65,13 +70,19 @@ public:
     typedef QByteArray FileChunkDecrypted;
 
 
+
+	// Odd numbers are with DH, even are without DH
     enum MsgType
     {
-        RegularMessage = 0,
-        RegularMessageDH = 1,
-        FileMessage = 2,
-        FileMessageDH = 3,
-        PureDH = 4
+		PureDH = 0,
+        RegularMessage = 2,
+        RegularMessageDH = 3,
+        FileMessage = 4,
+        FileMessageDH = 5,
+		FileContext = 6,
+		FileContextDH = 7,
+		FileResponse = 8,
+		FileResponseDH = 9
     };
 
     struct FileContext
@@ -90,11 +101,21 @@ public:
 		QByteArray messageText;
 		QDateTime timestamp;
 
+		ReceivedMessage() {};
+		ReceivedMessage(const ReceivedMessage & o) : messageText(o.messageText), timestamp(o.timestamp) {};
+
 	};
 //-----------------------Public Methods--------------------------------------------------
 
     Messages(peer *peerToConnect, QObject *parent = 0);
     ~Messages();
+
+
+
+
+
+
+	Session & getSessionFromName(QString & name);
 
     /*!
      * \brief parseMessage              Parses message and makes proper actions
@@ -103,7 +124,11 @@ public:
      * \param message                   message
      * \return                          true if everything goes allright
      */
-    bool parseMessage(Session & session, ArmaMessage &message, ReceivedMessage & receivedMessage);
+    static bool parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(MsgType, const ReceivedMessage &)> callback);
+
+
+
+	static QByteArray addMessageHeader(Session & session, const QByteArray & payload, Messages::MsgType type, Messages::MsgType typeDH);
 
     /*!
      * \brief createRegularMessage      Creates regular ArmaMessage that will be ready to send
@@ -122,6 +147,76 @@ public:
 	*/
     ArmaMessage createLoginMessage(QString & name, const QString & password, int port, bool reg = false);
 
+
+//---------------------------Files---------------------------------------------------
+	class FileSendingContext {
+		static qint64  transferID;
+		static QMap<qint64, std::shared_ptr<FileSendingContext>> transfers;
+	public:
+		static void sendFile(Session & s, const QString & path, std::function<void(const QByteArray &)>);
+		static void confirmFile(Session & s, const QByteArray & response);
+	private:
+		Session & session;
+		QString path;
+		qint64 fileSize;
+		qint64 destID;
+		std::function<void(const QByteArray &)> dataSender;
+
+		class Worker {
+			Session & session;
+			QString path;
+			qint64 destID;
+			std::function<void(QByteArray &)> dataSender;
+		public:
+			Worker(Session & session, qint64 destID, QString path, std::function<void(const QByteArray &)> dataSender) : session(session), destID(destID), path(path), dataSender(dataSender) { };
+			Worker(const Worker & w) : session(w.session), destID(w.destID), path(w.path), dataSender(w.dataSender) {};
+
+			void operator()(qint64 gstart, qint64 glen);
+		};
+
+		std::vector<Worker> workers;
+		std::vector<QFuture<void>> futures;
+
+	public:
+		FileSendingContext(Session & session, QString path, std::function<void(const QByteArray &)> dataSender);
+
+		bool startSending();
+	};
+
+
+	class FileReceivingContext {
+		static qint64  transferID;
+		static QMap<qint64, std::shared_ptr<FileReceivingContext>> transfers;
+	public:
+		static void receiveFile(Session & s, const QByteArray & payload, std::function<void(const QByteArray &)> sender);
+		static void receiveChunk(Session & s, const QByteArray & payload);
+	private:
+		Session & session;
+		QString path;
+		qint64 fileSize;
+		qint64 originID;
+
+		class Worker {
+			Session & session;
+			QString path;
+			qint64 fileSize;
+		public:
+			Worker(Session & session, QString path, qint64 fileSize) : session(session), path(path), fileSize(fileSize) { };
+			Worker(const Worker & w) : session(w.session), path(w.path), fileSize(fileSize) {};
+
+			void operator()(qint64 start, qint64 len, QByteArray data);
+		};
+
+		std::vector<Worker> workers;
+		std::vector<QFuture<void>> futures;
+
+	public:
+		FileReceivingContext(Session & session, QString path);
+
+		void parseChunk(const QByteArray & data);
+		void parseChunk(qint64 start, qint64 len, const QByteArray & data);
+		void operator()(qint64 start, qint64 len, const QByteArray & data) { parseChunk(start, len, data); };
+	};
     /*!
      * \brief createFileSendingContext  Prepares File for sending to peger
      *                                  - creates a context which getFileMessage() will be working with
@@ -129,7 +224,7 @@ public:
      * \param receiver                  intended receiver of a file
      * \return                          true if everything goes well
      */
-    bool createFileSendingContext(QString path, QString receiver);
+	// FileContext * createFileSendingContext(Session & session, QString path);
 
     /*!
      * \brief getFileMessage
@@ -152,21 +247,6 @@ public:
 //---------------------------Others---------------------------------------------------
     Krypto mKrypto;
     peer *mPeer;    //actual peer we are communicating with
-
-private:
-    /*!
-     * \brief parseFileMessage          Parses File data block (creates file for first one)
-     * \param encryptedData
-     * \return
-     */
-    bool parseFileMessage(const FileChunkEncrypted &fileChunk);
-
-	
-    ArmaMessage* createFileMessage(FileContext *context, QString eceiver);
-
-    QList<FileContext*>  mFileContexts;
-    QList<FileChunkDecrypted*> mUnorderedFileBlocks;
-
 
 };
 
