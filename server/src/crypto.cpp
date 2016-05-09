@@ -3,6 +3,52 @@
 
 #include "crypto.h"
 
+inline const unsigned char * toUChar(const QByteArray & a) { return reinterpret_cast<const unsigned char *>(a.operator const char *()); };
+
+
+bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray& cert) {
+	mbedtls_pk_context subject_key;
+	mbedtls_x509_csr subject_request;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	mbedtls_x509write_cert crt;
+
+	mbedtls_x509write_crt_init(&crt);
+	mbedtls_x509write_crt_set_md_alg(&crt, MBEDTLS_MD_SHA256);
+	mbedtls_pk_init(&subject_key);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+
+
+	const char *pers = "crt creation";
+	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
+
+	mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length());
+
+	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
+
+	//check issuer key and certificate
+	if (!mbedtls_pk_can_do(&server_crt.pk, MBEDTLS_PK_RSA) ||
+		mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa(server_crt.pk)->N,
+		&mbedtls_pk_rsa(server_key)->N) != 0 ||
+		mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa(server_crt.pk)->E,
+		&mbedtls_pk_rsa(server_key)->E) != 0)
+	{
+		throw new CryptoException("Server certificate and key do not match.");
+	}
+
+
+	mbedtls_x509write_crt_set_issuer_key(&crt, &server_key);
+	mbedtls_x509write_crt_set_validity(&crt,
+		QDateTime::currentDateTimeUtc().toString("yyyyMMddhhmmss").toStdString().c_str(),
+		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str());
+
+	//export certificate
+	unsigned char output[4096];
+	memset(output, 0, 4096);
+	mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg);
+	cert = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+
+	return true;
+}
 
 std::string PasswordManager::hash(const char *password) {
 	unsigned char pass[64], salt[16];
