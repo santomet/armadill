@@ -125,10 +125,12 @@ public:
 		case RegularMessage, RegularMessageDH:
 
 			break;
-		case FileMessage, FileMessageDH:
+		case FileMessage:
+		case FileMessageDH:
 			FileReceivingContext::receiveChunk(session, payload.messageText);
 			break;
-		case FileContext, FileContextDH:
+		case FileContext:
+		case FileContextDH:
 			// FileReceivingContext::receiveFile(session, payload, );
 			break;
 		}
