@@ -151,7 +151,7 @@ void ClientConsole::userInput(QString Qline)
         }
         break;
     case Message:
-        //TODO: WTF funktor //emit sendDataToPeer(mMessages->createRegularMessage(mPeerSessions.value(mActivePeer), Qline));
+        emit sendDataToPeer(mMessages->createRegularMessage(std::bind(sessionHandler, *this), Qline));
         break;
     case LoginOrRegister :
         if(Qline == "l")
@@ -186,7 +186,7 @@ void ClientConsole::userInput(QString Qline)
     case PasswordRegister :
         mPassword = Qline;
         qDebug() << mNickName << ":" << mPassword;
-        emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, true));
+        emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, mListeningPort, true));
         mExpectedInput = None;
         break;
     default :

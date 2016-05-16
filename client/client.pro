@@ -4,6 +4,7 @@ QT -= gui
 CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= flat
+CONFIG += c++11
 
 unix {
 	QMAKE_CXX = g++-4.8
