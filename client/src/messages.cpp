@@ -175,7 +175,7 @@ QByteArray Messages::addMessageHeader(Session & session, const QByteArray & payl
 	if (dh.length() > 0) {
 		ret.append('A' + typeDH);
 		ret.append(Messages::armaSeparator);
-		ret.append(key.getDH().toBase64());
+		ret.append(dh.toBase64());
 	}
 	else {
 		ret.append('A' + type);
