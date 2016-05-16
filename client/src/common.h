@@ -39,6 +39,7 @@ public:
 
 
 	void send(const QByteArray & data) { sender(data); };
+	void setSender(std::function<void(const QByteArray &)> sender) { this->sender = sender; };
 };
 
 
