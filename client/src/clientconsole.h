@@ -40,6 +40,8 @@ private:
     /**
      * @brief mPeerSessions, mPeerConnections, mNickConnectionMap               peer identifying system (sessions may not be used??)
      */
+
+	int currentID = 0;
     QMap<int, Session*> mPeerSessions;
     QMap<int, PeerConnection*> mPeerConnections;
     QMap<QString, int> mNickConnectionMap;
@@ -76,7 +78,6 @@ private:
     QString mNickName, mPassword;
 
 	friend Session & sessionHandler(ClientConsole & c, const QString &);
-
 signals:
     void exitNormal();
     void sendDataToServer(QByteArray a);

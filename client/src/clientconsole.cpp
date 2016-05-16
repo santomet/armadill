@@ -48,13 +48,19 @@ void ClientConsole::loggedInPeersFromServer(QByteArray a)
     qDebug() << "write nickname to connect to peer";
 }
 
+
+static void sendingHelperFunc(PeerConnection * ptr, const QByteArray & data) {
+	ptr->sendDataToPeer(data);
+}
+
 void ClientConsole::connectToPeer(peer p)
 {
     PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
-    int i = mPeerConnections.size();
+	int i = currentID++;
     peerConn->setID(i);
     mPeerConnections.insert(i, peerConn);
     Session *s = new Session(mNickName, p.name, &mTLS_entropy);
+	s->setSender(std::bind(sendingHelperFunc, peerConn, std::placeholders::_1));
     mPeerSessions.insert(i, s);
     mNickConnectionMap.insert(p.name, i);
 }
@@ -75,7 +81,7 @@ void ClientConsole::connectionSuccessful(int id)
 
 void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
 {
-    int i = mPeerConnections.size();
+    int i = currentID++;;
     mPeerConnections.insert(i, c);
     c->setID(i);
 }
