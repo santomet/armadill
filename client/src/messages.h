@@ -51,7 +51,8 @@ public:
 	// Odd numbers are with DH, even are without DH
     enum MsgType
     {
-		PureDH = 0,
+		None = 0,
+		PureDH = 1,
         RegularMessage = 2,
         RegularMessageDH = 3,
         FileMessage = 4,
