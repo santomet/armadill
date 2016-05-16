@@ -106,7 +106,6 @@ void ClientConsole::dataFromPeerReady(int id, QByteArray a)
     else
     {
         QString parsedMessage;
-   //TODO: funktor?! //    mMessages->parseMessage(mPeerSessions.value(id), a, parsedMessage);
 		Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, Messages::callbackHandler);
         qDebug() << parsedMessage;
     }
@@ -151,7 +150,7 @@ void ClientConsole::userInput(QString Qline)
         }
         break;
     case Message:
-        emit sendDataToPeer(mMessages->createRegularMessage(std::bind(sessionHandler, *this), Qline));
+        emit sendDataToPeer(mMessages->createRegularMessage(*mPeerSessions.value(mActivePeer), Qline));
         break;
     case LoginOrRegister :
         if(Qline == "l")
