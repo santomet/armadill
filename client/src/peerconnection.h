@@ -21,8 +21,6 @@ class PeerConnection : public QObject
 public:
     explicit PeerConnection(qintptr soc = 0, peer _peer = {}, ServerConnection *server = nullptr, QObject *parent = 0);
 
-    void sendData(QByteArray d);
-
     //getters
     int getID() {return mID;}
     peer getPeer() {return mPeer;}
