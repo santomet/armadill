@@ -189,5 +189,6 @@ bool SessionKey::generateKey() {
     my = other = false;
     key_old_dec_uses = key_dec_uses.exchange(0);
     key_enc_uses = 0;
+	keysReady = true;
     return true;
 }

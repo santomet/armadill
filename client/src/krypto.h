@@ -97,6 +97,7 @@ class SessionKey {
 
 	std::atomic<bool> my;
 	std::atomic<bool> other;
+	std::atomic<bool> keysReady;
 
 	std::atomic<size_t> key_enc_uses;
 	std::atomic<size_t> key_dec_uses;
@@ -122,7 +123,7 @@ class SessionKey {
 	static HelperMpi helper;
 
 public:
-	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false), key_enc_uses(0), key_dec_uses(0), key_old_dec_uses(0) {
+	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false), key_enc_uses(0), key_dec_uses(0), key_old_dec_uses(0), keysReady(false) {
 		mbedtls_dhm_init(&dhmc);
         uchar out[2048];
         size_t len;
@@ -211,8 +212,16 @@ public:
 	*/
 	bool generateKey();
 
+	/*!
+	* \brief generateKey				Chenks if session key is ready to protext / unprotect a message
+	* \return							true if ready, false if not
+	*/
+	bool isReady() const { return keysReady; };
 
-
+	/*!
+	* \brief generateKey				Get current shared key. FOR DEBUG PURPOSSES ONLY!
+	* \return							Current shared key
+	*/
 	const QByteArray & getSharedKey() const { return currentkey; };
 };
 
