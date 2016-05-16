@@ -28,14 +28,12 @@ void PeerConnection::init() {
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
     connect(mSoc, SIGNAL(readyRead()), this, SLOT(dataFromPeerReady()));
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
 
-    if(mSocDescriptor != 0)
-    {
+    if(mSocDescriptor != 0) {
+		connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
         mSoc->setSocketDescriptor(mSocDescriptor);
     }
-    else
-    {
+    else {
         connect(mSoc, SIGNAL(connected()), this, SLOT(connectionSuccess()));
         mSoc->connectToHost(mPeer.address, mPeer.listeningPort);
     }
