@@ -5,7 +5,7 @@
 
 
 
-
+#include <stdexcept>
 #include "../src/clientconsole.h"
 #include "../../include/catch.hpp"
 #include <QFile>
@@ -135,12 +135,14 @@ public:
 };
 
 class TestDataSender3 {
+	Messages::MsgType expectedType;
 	std::function<void(qint64, qint64, const QByteArray &)> callback;
 public:
-	TestDataSender3(std::function<void(qint64, qint64, const QByteArray &)> cb) : callback(cb) {};
-	TestDataSender3(const TestDataSender3 & o) : callback(o.callback) {};
+	TestDataSender3(std::function<void(qint64, qint64, const QByteArray &)> cb, Messages::MsgType expectedType = Messages::MsgType::None) : callback(cb), expectedType(expectedType) {};
+	TestDataSender3(const TestDataSender3 & o) : callback(o.callback), expectedType(o.expectedType) {};
 
 	void operator()(Session & s, Messages::MsgType t, const Messages::ReceivedMessage & data) {
+		if (expectedType != Messages::MsgType::None && expectedType != t) throw std::runtime_error("Test: Invalid message type!");
 		QList<QByteArray> list = data.messageText.split(Messages::armaSeparator);
 
 		qint64 id = list[0].toLongLong();
