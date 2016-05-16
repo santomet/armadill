@@ -91,23 +91,24 @@ public:
 
 	static void callbackHandler(Session & session, MsgType type, const ReceivedMessage & payload) {
 		switch (type) {
-		case RegularMessage, RegularMessageDH:
-
+		case RegularMessage:
+		case RegularMessageDH:
+			//TODO: print message on terminal 
 			break;
 		case FileMessage:
 		case FileMessageDH:
 			FileReceivingContext::receiveChunk(session, payload.messageText);
 			break;
+		case FileResponse:
+		case FileResponseDH:
+			FileSendingContext::confirmFile(session, payload.messageText);
+			break;
 		case FileContext:
 		case FileContextDH:
-			// FileReceivingContext::receiveFile(session, payload, );
+			FileReceivingContext::receiveFile(session, payload.messageText);
 			break;
 		}
 	};
-
-
-
-	Session & getSessionFromName(QString & name);
 
     /*!
      * \brief parseMessage              Parses message and makes proper actions
