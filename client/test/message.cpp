@@ -344,7 +344,7 @@ TEST_CASE("Sending long files", "[File transfer]") {
 }
 
 void helperFunction(Messages::MsgType t, const Messages::ReceivedMessage & data) {
-	qDebug() << data.messageText;
+	qDebug() << "Message(" << t << "): " << data.messageText;
 }
 
 TEST_CASE("Receiving file", "[File transfer]") {
