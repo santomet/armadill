@@ -39,7 +39,7 @@ private:
     peer mPeer;
     ServerConnection *mServer;
 
-    QTcpSocket *mSoc;
+    QSslSocket *mSoc;
     qintptr mSocDescriptor;
     QString mPeerAddress;
     int mPeerPort;
@@ -60,7 +60,7 @@ private slots:
     void connectionSuccess() {emit peerConnected(mID);}
     void disconnected() {emit peerDisconnected(mID);}
     void readDataFromClient() {emit dataReady(mID, mSoc->readAll());}
-
+	void sllErrorsClient(const QList<QSslError> & errors);
 };
 
 
