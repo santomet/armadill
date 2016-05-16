@@ -21,38 +21,6 @@
 
 
 /**
- * @brief The Session class                        Basically a messaging session, different for every peer. Works with DH
- */
-class Session {
-	QString myName;
-	QString otherName;
-    SessionKey key;
-public:
-    Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
-
-	virtual ~Session() {};
-
-	/*!
-	* \brief getMyName
-	* \return                          Returns client name
-	*/
-    const QString & getMyName() const { return myName; };
-
-	/*!
-	* \brief getPartnerName
-	* \return                          Returns partners name
-	*/
-    const QString & getPartnerName() const { return otherName; };
-
-	/*!
-	* \brief getKey
-	* \return                          Returns SessionKey of the session
-	*/
-    SessionKey & getKey() { return key; };
-};
-
-
-/**
  * @brief The Messages class                    Originally intended to be used as session (separate object for every peer) but somehow diverted into a namespace...
  */
 class Messages : public QObject
