@@ -3,8 +3,8 @@
 PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server, QObject *parent)
     : QObject(parent), mPeer(_peer), mServer(server), mSocDescriptor(soc)
 {
-    if(soc == 0 && mPeer.name.isEmpty())
-    {
+    if(soc == 0 && mPeer.name.isEmpty()) {
+		//TODO: throw exception or something, this is useless
         qDebug() << "[ERROR] Creating a connection to peer: cannot call empty constructor!";
         return;
     }
