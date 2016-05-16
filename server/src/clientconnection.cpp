@@ -82,7 +82,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
         return false;
 
     //TODO certificate
-    nickname = QString::fromUtf8(list.at(1));
+    nickname = QString::fromUtf8(QByteArray::fromBase64(list.at(1)));
     password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
     port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
     if(reg)

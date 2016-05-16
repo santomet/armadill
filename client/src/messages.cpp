@@ -35,7 +35,7 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	ArmaMessage ret;
     ret.append(reg ? "r" : "l");
     ret.append(Messages::armaSeparator);
-	ret.append(name.toUtf8());
+	ret.append(name.toUtf8().toBase64());
 	ret.append(Messages::armaSeparator);
 	ret.append(password.toUtf8().toBase64());
     ret.append(Messages::armaSeparator);
