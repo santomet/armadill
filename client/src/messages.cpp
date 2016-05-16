@@ -239,7 +239,8 @@ void Messages::FileReceivingContext::receiveFile(Session & s, const QByteArray &
 	response.append(Messages::armaSeparator);
 	response.append(QByteArray::number(transferID));
 
-	sender(Messages::addMessageHeader(s, response, MsgType::FileResponse, MsgType::FileResponseDH));
+	if(sender) sender(Messages::addMessageHeader(s, response, MsgType::FileResponse, MsgType::FileResponseDH));
+	else s.send(Messages::addMessageHeader(s, response, MsgType::FileResponse, MsgType::FileResponseDH));
 }
 
 void Messages::FileReceivingContext::receiveChunk(Session & s, const QByteArray & payload) {

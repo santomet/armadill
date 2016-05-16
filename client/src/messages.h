@@ -187,7 +187,7 @@ public:
 		static qint64  transferID;
 		static QMap<qint64, std::shared_ptr<FileReceivingContext>> transfers;
 	public:
-		static void receiveFile(Session & s, const QByteArray & payload, std::function<void(const QByteArray &)> sender);
+		static void receiveFile(Session & s, const QByteArray & payload, std::function<void(const QByteArray &)> sender = std::function<void(const QByteArray &)>());
 		static void receiveChunk(Session & s, const QByteArray & payload);
 	private:
 		Session & session;
