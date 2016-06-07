@@ -80,3 +80,5 @@ server/Win32/*
 *.opendb
 *.db
 *.t
+server/testdb.sql
+server/testdb.sql-journal
