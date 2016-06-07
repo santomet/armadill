@@ -94,7 +94,7 @@ public slots:
     void init();
     //client-server
     void serverConnected() {mExpectedInput = LoginOrRegister;}
-    void loginSuccess() {qDebug() << "You can load peers from server (p)"; mExpectedInput = Idle;}
+	void loginSuccess(QByteArray);
     void registrationSuccess() {qDebug() << "You can now log in (l) or register new account(r)"; mExpectedInput = LoginOrRegister;}
     void fail() {qDebug() << "Please try again - login(l) or register(r)"; mExpectedInput = LoginOrRegister;}
     void loggedInPeersFromServer(QByteArray a);

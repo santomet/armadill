@@ -32,7 +32,7 @@ public:
 
 signals:
     void connectSuccess();
-    void loginSuccess();
+    void loginSuccess(QByteArray);
     void registrationSuccess();
     void fail();
     void gotLoggedInPeers(QByteArray a);

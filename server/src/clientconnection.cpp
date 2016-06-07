@@ -1,4 +1,7 @@
 #include "clientconnection.h"
+#include "crypto.h"
+
+CertificateManager certMngr;
 
 ClientConnection::ClientConnection(qintptr socDescriptor, ServerManager *ser, bool newThread, QObject *parent) : QObject(parent),
     mServerManager(ser),
@@ -67,12 +70,10 @@ void ClientConnection::readDataFromClient()
 
 
 bool ClientConnection::parseLoginMessage(QByteArray& message) {
-    QString nickname, password;
-    int port;
     bool reg;
     int count = message.count('#');
-    if(count!=3)
-        return false;
+    if(count < 3) return false;
+
     QList<QByteArray> list = message.split('#');
     if(list.at(0) == "l")
         reg = false;
@@ -82,34 +83,35 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
         return false;
 
     //TODO certificate
-    nickname = QString::fromUtf8(QByteArray::fromBase64(list.at(1)));
-    password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
-    port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
-    if(reg)
-    {
-        if(!mServerManager->newRegistration(nickname, password))
-        {
+    QString nickname = QString::fromUtf8(QByteArray::fromBase64(list.at(1)));
+    QString password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
+	int port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
+
+    if(reg) {
+		if (count != 3) return false;
+        if(!mServerManager->newRegistration(nickname, password)) {
             this->sendDataToClient("m#REG_FAIL");
         }
         else
         {
-            this->sendDataToClient("m#REG_SUC");
+            this->sendDataToClient("m#REG_SUCC");
         }
     }
-    else
-    {
-        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), port, "NO_CERT"))
-        {
+    else {
+		if (count != 4) return false;
+
+        if(!mServerManager->login(nickname, password, mSoc->peerAddress().toString(), port, "NO_CERT")) {
             this->sendDataToClient("m#LOG_FAILED");
         }
-        else
-        {
-            this->sendDataToClient("m#LOG_SUC");
+        else {
+			QByteArray cert, req = list.at(4);
+			certMngr.createCert(nickname, req, cert);
+			QByteArray resp = "m#LOG_SUCC#";
+			resp.append(cert);
+			this->sendDataToClient(resp);
             mNickName = nickname;
         }
     }
-
-
     return true;
 }
 

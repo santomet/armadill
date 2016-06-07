@@ -45,7 +45,7 @@ public:
      *
      * \param common            Common name for certificate
      */
-    bool createCert(QByteArray &priv, QByteArray &req, const QString common);
+    static void createCert(QByteArray &priv, QByteArray &req, const QString common);
 
     /*!
      * \brief verifyCert        Verifies signature

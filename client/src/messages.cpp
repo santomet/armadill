@@ -2,7 +2,8 @@
 
 
 
-
+QSslCertificate Messages::localCert;
+QSslKey Messages::localKey;
 
 
 
@@ -31,6 +32,10 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 }
 
 Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password, int port, bool reg) {
+	QByteArray req, key;
+	Krypto::createCert(key, req, name);
+	localKey = QSslKey(key, QSsl::KeyAlgorithm::Rsa);
+
     //TODO: certificate and port
 	ArmaMessage ret;
     ret.append(reg ? "r" : "l");
@@ -40,6 +45,8 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	ret.append(password.toUtf8().toBase64());
     ret.append(Messages::armaSeparator);
     ret.append(QString::number(port).toUtf8().toBase64());
+	ret.append(Messages::armaSeparator);
+	ret.append(req);
 	return ret;
 }
 

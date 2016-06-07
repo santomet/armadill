@@ -37,14 +37,13 @@ void ServerConnection::dataFromServerReady()
 {
     QByteArray a = mSoc->readAll();
 //    qDebug() << "we've got data from server!";
-    if(a.at(0) == 'm' || a.count('#') == 1)
-    {
+    if(a.at(0) == 'm') {
         qDebug() << "Message from server: " << a.mid(2);
-        if(a.contains("LOG_SUC"))
-            emit loginSuccess();
+        if(a.mid(2, 8) == "LOG_SUCC")
+            emit loginSuccess(a.mid(11));
         else if(a.contains("LOG_FAIL") || a.contains("REG_FAIL"))
             emit fail();
-        else if(a.contains("REG_SUC"))
+        else if(a.contains("REG_SUCC"))
             emit registrationSuccess();
     }
     else if(!QJsonDocument::fromJson(a).isNull())

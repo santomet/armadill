@@ -27,6 +27,9 @@ class Messages : public QObject
 {
     Q_OBJECT
 public:
+	static QSslCertificate localCert;
+	static QSslKey localKey;
+public:
     static const char armaSeparator = '#';
 	static const qint64 maxThreads = 8;
 	static const qint64 maxChunkSize = 2048;

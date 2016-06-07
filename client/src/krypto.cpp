@@ -9,7 +9,7 @@ Krypto::Krypto()
 
 }
 
-bool Krypto::createCert(QByteArray &priv, QByteArray &request, const QString common) {
+void Krypto::createCert(QByteArray &priv, QByteArray &request, const QString common) {
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_pk_context pk; //rsa key pair
@@ -56,8 +56,6 @@ bool Krypto::createCert(QByteArray &priv, QByteArray &request, const QString com
 	mbedtls_pk_free(&pk);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 	mbedtls_entropy_free(&entropy);
-
-	return true;
 }
 
 bool Krypto::verifyCert(const QByteArray pubToVerify, const QByteArray pubCA) {

@@ -23,7 +23,7 @@ void ClientConsole::init()
         //server
         mServerConnection = new ServerConnection(mServer.at(0), mServer.at(1).toInt());
         connect(mServerConnection, SIGNAL(connectSuccess()), this, SLOT(serverConnected()));
-        connect(mServerConnection, SIGNAL(loginSuccess()), this, SLOT(loginSuccess()));
+        connect(mServerConnection, SIGNAL(loginSuccess(QByteArray)), this, SLOT(loginSuccess(QByteArray)));
         connect(mServerConnection, SIGNAL(fail()), this, SLOT(fail()));
         connect(mServerConnection, SIGNAL(registrationSuccess()), this, SLOT(registrationSuccess()));
         connect(mServerConnection, SIGNAL(gotLoggedInPeers(QByteArray)), this, SLOT(loggedInPeersFromServer(QByteArray)));
@@ -35,6 +35,13 @@ void ClientConsole::init()
 
     }
 
+}
+
+void ClientConsole::loginSuccess(QByteArray cert) {
+	qDebug() << "You can load peers from server (p)"; 
+	mExpectedInput = Idle;
+	Messages::localCert = QSslCertificate(cert);
+	qDebug() << Messages::localCert;
 }
 
 void ClientConsole::loggedInPeersFromServer(QByteArray a)
@@ -131,7 +138,10 @@ void ClientConsole::startPeerServer()
 
 void ClientConsole::userInput(QString Qline)
 {
-	if (Qline.at(0) == '/') ClientConsole::command(Qline.mid(1));
+	if (Qline.at(0) == '/') {
+		ClientConsole::command(Qline.mid(1));
+		return;
+	}
     switch (mExpectedInput)
     {
     case None :
@@ -209,6 +219,6 @@ void ClientConsole::command(QString cmdtext) {
 		QCoreApplication::exit(0);
 	}
 	else if (cmdtext.startsWith("file")) {
-		Messages::FileSendingContext::sendFile(*mPeerSessions.value(mActivePeer), cmdtext.mid(5), mPeerSessions.value(mActivePeer)->send);
+		//Messages::FileSendingContext::sendFile(*mPeerSessions.value(mActivePeer), cmdtext.mid(5), mPeerSessions.value(mActivePeer)->send);
 	}
 }
