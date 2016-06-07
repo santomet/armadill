@@ -15,13 +15,16 @@
 #include <string>
 #include <QString>
 #include <QDateTime>
+#include <QDebug.h>
 
-#define SERVER_CERT_FILE "server.crt"
-#define SERVER_KEY_FILE "server.key"
+#define SERVER_CERT_FILE "D:/Libraries/Documents/Skola/armadill/server/test/ARMADILL.crt"
+#define SERVER_KEY_FILE "D:/Libraries/Documents/Skola/armadill/server/test/ARMADILL.key"
 
 class CryptoException : public std::runtime_error {
+	int err;
 public:
-	CryptoException(const char * msg) : std::runtime_error(msg) {};
+	CryptoException(const char * msg, int err = 0) : std::runtime_error(msg), err(err) {};
+	int error() const { return err; };
 };
 
 class CertificateManager {

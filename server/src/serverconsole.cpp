@@ -25,7 +25,7 @@ void ServerConsole::init()
         }
         else
         {
-            qDebug() << "Server Started...";
+            qDebug() << "Server Started on port " << mPort;
         }
     }
 }

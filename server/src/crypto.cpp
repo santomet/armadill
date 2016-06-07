@@ -21,6 +21,7 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	const char *pers = "crt creation";
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
 
+	qDebug() << req;
 	mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length());
 
 	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
@@ -37,9 +38,10 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 
 
 	mbedtls_x509write_crt_set_issuer_key(&crt, &server_key);
-	mbedtls_x509write_crt_set_validity(&crt,
+	if (mbedtls_x509write_crt_set_validity(&crt,
 		QDateTime::currentDateTimeUtc().toString("yyyyMMddhhmmss").toStdString().c_str(),
-		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str());
+		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str()))
+		throw CryptoException("Certificate validity time error.");
 
 	//export certificate
 	unsigned char output[4096];

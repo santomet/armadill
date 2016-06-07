@@ -12,7 +12,7 @@ class ClientConnection : public QObject
     Q_OBJECT
 public:
     explicit ClientConnection(qintptr socDescriptor, ServerManager *ser, bool newThread, QObject *parent = 0);
-    ~ClientConnection();
+	~ClientConnection();
 
 signals:
     void done(ClientConnection *c);
@@ -21,6 +21,7 @@ public slots:
 protected slots:
     void init();
     void doneSlot() {emit done(this);}
+	void destroy();
 
     void readDataFromClient();
     void sendDataToClient(QByteArray a) {mSoc->write(a);}

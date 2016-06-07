@@ -47,10 +47,10 @@ void Krypto::createCert(QByteArray &priv, QByteArray &request, const QString com
 
 	memset(output, 0, 4096);
 	mbedtls_x509write_csr_pem(&req, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg);
-	request = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+	request = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
 	memset(output, 0, 4096);
 	mbedtls_pk_write_key_pem(&pk, output, 4096);
-	priv = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+	priv = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
 
 	//clean
 	mbedtls_pk_free(&pk);

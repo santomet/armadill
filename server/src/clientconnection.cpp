@@ -20,10 +20,16 @@ ClientConnection::ClientConnection(qintptr socDescriptor, ServerManager *ser, bo
     }
 }
 
+void ClientConnection::destroy()
+{
+	delete mSoc;
+}
+
 ClientConnection::~ClientConnection()
 {
     this->disconnect();
     this->mSoc->disconnect();
+	QMetaObject::invokeMethod(this, "destroy", Qt::BlockingQueuedConnection);
     if(mThread!=nullptr)
     {
         mThread->quit();
@@ -31,7 +37,6 @@ ClientConnection::~ClientConnection()
             mThread->terminate();
     }
     qDebug() << "disconnected" << mPeerAddress;
-    delete mSoc;
     //TODO
 //    if(!mNickName.isEmpty())
 //        mServerManager->logout(mNickName)
@@ -105,11 +110,17 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
         }
         else {
 			QByteArray cert, req = list.at(4);
-			certMngr.createCert(nickname, req, cert);
-			QByteArray resp = "m#LOG_SUCC#";
-			resp.append(cert);
-			this->sendDataToClient(resp);
-            mNickName = nickname;
+			try {
+				certMngr.createCert(nickname, req, cert);
+				QByteArray resp = "m#LOG_SUCC#";
+				resp.append(cert);
+				this->sendDataToClient(resp);
+				mNickName = nickname;
+			}
+			catch (CryptoException & e) {
+				qDebug() << "Login Failed: " << e.what() << " (" << e.error() << ")";
+				this->sendDataToClient("m#LOG_FAILED");
+			}
         }
     }
     return true;
