@@ -139,21 +139,23 @@ void ClientConsole::userInput(QString Qline)
     case Idle :
         if(Qline == "p")
             emit sendDataToServer("j");
-        else
-        {
-            peer peerToConnect = {};
-            foreach(peer p, mOnlinePeerList)
-            {
-                if(Qline == p.name)
-                    peerToConnect = p;
-            }
-            if(peerToConnect.name.isEmpty())
-            {
-                qDebug() << "selected peer not found";
-            }
-            else
-                connectToPeer(peerToConnect);
-        }
+		else
+		{
+			peer peerToConnect = {};
+			foreach(peer p, mOnlinePeerList)
+			{
+				if (Qline == p.name)
+					peerToConnect = p;
+			}
+			if (peerToConnect.name.isEmpty())
+			{
+				qDebug() << "selected peer not found";
+			}
+			else {
+				connectToPeer(peerToConnect);
+				mExpectedInput = None;
+			}
+		}
         break;
     case Message:
         emit sendDataToPeer(mMessages->createRegularMessage(*mPeerSessions.value(mActivePeer), Qline));
