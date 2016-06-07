@@ -77,6 +77,8 @@ private:
     ExpectedUserInput mExpectedInput{None};
     QString mNickName, mPassword;
 
+	void command(QString);
+
 	friend Session & sessionHandler(ClientConsole & c, const QString &);
 signals:
     void exitNormal();

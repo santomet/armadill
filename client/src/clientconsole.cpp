@@ -131,6 +131,7 @@ void ClientConsole::startPeerServer()
 
 void ClientConsole::userInput(QString Qline)
 {
+	if (Qline.at(0) == '/') ClientConsole::command(Qline.mid(1));
     switch (mExpectedInput)
     {
     case None :
@@ -201,3 +202,13 @@ void ClientConsole::userInput(QString Qline)
     }
 }
 
+
+
+void ClientConsole::command(QString cmdtext) {
+	if (cmdtext == "exit") {
+		QCoreApplication::exit(0);
+	}
+	else if (cmdtext.startsWith("file")) {
+		Messages::FileSendingContext::sendFile(*mPeerSessions.value(mActivePeer), cmdtext.mid(5), mPeerSessions.value(mActivePeer)->send);
+	}
+}
