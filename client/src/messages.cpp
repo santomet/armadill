@@ -1,9 +1,12 @@
 #include "messages.h"
 
 
-
 QSslCertificate Messages::localCert;
 QSslKey Messages::localKey;
+
+const char Messages::armaSeparator;
+const qint64 Messages::maxThreads;
+const qint64 Messages::maxChunkSize;
 
 
 
