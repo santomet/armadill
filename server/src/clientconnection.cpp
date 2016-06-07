@@ -71,7 +71,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     int port;
     bool reg;
     int count = message.count('#');
-    if(count!=2)
+    if(count!=3)
         return false;
     QList<QByteArray> list = message.split('#');
     if(list.at(0) == "l")
