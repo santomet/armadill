@@ -26,7 +26,6 @@ void PeerConnection::init() {
 
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
-    connect(mSoc, SIGNAL(readyRead()), this, SLOT(dataFromPeerReady()));
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(disconnected()));
 
     if(mSocDescriptor != 0) {
