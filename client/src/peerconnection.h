@@ -91,7 +91,8 @@ protected:
     void incomingConnection(qintptr handle) override {PeerConnection *c = new PeerConnection(handle, {}, mServerConnection); //creating PeerConnection with empty peer
                                                      mConnections.append(c);
                                                      emit newRemoteInitiatedConnection(c);
-                                                     connect(c, SIGNAL(done(PeerConnection*)), this, SLOT(deleteConnection(PeerConnection*)), Qt::QueuedConnection);
+													 // TODO
+                                                     //connect(c, SIGNAL(done(PeerConnection*)), this, SLOT(deleteConnection(PeerConnection*)), Qt::QueuedConnection);
                                                      }
     ServerConnection *mServerConnection;
 };
