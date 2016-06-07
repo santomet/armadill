@@ -32,6 +32,7 @@ private:
 	mbedtls_entropy_context entropy;
 	mbedtls_pk_context server_key;
 	mbedtls_x509_crt server_crt;
+	mbedtls_mpi serial;
 public:
 	CertificateManager() {
 		mbedtls_entropy_init(&entropy);
@@ -46,6 +47,7 @@ public:
 		{
 			throw CryptoException("Unable to load server certificate.");
 		}
+		mbedtls_mpi_init(&serial);
 	}
 	~CertificateManager() {
 		mbedtls_entropy_free(&entropy);

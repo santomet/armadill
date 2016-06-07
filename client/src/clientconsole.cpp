@@ -14,6 +14,7 @@ void ClientConsole::init()
     }
     else
     {
+		std::cin.get();
         mbedtls_entropy_init(&mTLS_entropy); //start an entropy
         mbedtls_entropy_gather(&mTLS_entropy);
 

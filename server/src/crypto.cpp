@@ -2,11 +2,13 @@
 
 
 #include "crypto.h"
+#include <iostream>
 
 inline const unsigned char * toUChar(const QByteArray & a) { return reinterpret_cast<const unsigned char *>(a.operator const char *()); };
 
 
 bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray& cert) {
+	int ret;
 	mbedtls_pk_context subject_key;
 	mbedtls_x509_csr subject_request;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -21,9 +23,10 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	const char *pers = "crt creation";
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
 
-	qDebug() << req;
-	mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length());
+	std::cout << req.toStdString() << std::endl;
+	if(ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) throw CryptoException("Can't read csr.", ret);
 
+	mbedtls_x509write_crt_set_subject_name(&crt, (const char *)&subject_request.subject.val.p);
 	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
 
 	//check issuer key and certificate
@@ -36,18 +39,27 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 		throw new CryptoException("Server certificate and key do not match.");
 	}
 
-
+	mbedtls_x509write_crt_set_serial(&crt, &serial);
 	mbedtls_x509write_crt_set_issuer_key(&crt, &server_key);
+	mbedtls_x509write_crt_set_issuer_name(&crt, (const char *)&server_crt.issuer.val.p);
+
 	if (mbedtls_x509write_crt_set_validity(&crt,
 		QDateTime::currentDateTimeUtc().toString("yyyyMMddhhmmss").toStdString().c_str(),
 		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str()))
 		throw CryptoException("Certificate validity time error.");
 
+	mbedtls_x509write_crt_set_basic_constraints(&crt, 0, 10);
+
+#if defined(MBEDTLS_SHA1_C)
+	mbedtls_x509write_crt_set_subject_key_identifier(&crt);
+	ret = mbedtls_x509write_crt_set_authority_key_identifier(&crt);
+#endif
+
 	//export certificate
 	unsigned char output[4096];
 	memset(output, 0, 4096);
-	mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg);
-	cert = QByteArray(reinterpret_cast<const char *>(output), sizeof(output));
+	if(ret = mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg)) throw CryptoException("Certificate write error.", ret);
+	cert = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
 
 	return true;
 }
