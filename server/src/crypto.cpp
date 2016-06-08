@@ -23,6 +23,8 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	const char *pers = "crt creation";
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
 
+    req.append('\0'); //must be null terminated string
+
 	std::cout << req.toStdString() << std::endl;
 	if(ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) throw CryptoException("Can't read csr.", ret);
 

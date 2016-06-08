@@ -93,7 +93,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
 	int port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
 
     if(reg) {
-		if (count != 3) return false;
+        if (count != 3) return false;
         if(!mServerManager->newRegistration(nickname, password)) {
             this->sendDataToClient("m#REG_FAIL");
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#define MBEDTLS_PEM_PARSE_C
 
 #include "../../include/mbedtls/md.h"
 #include "../../include/mbedtls/pkcs5.h"
@@ -15,10 +16,10 @@
 #include <string>
 #include <QString>
 #include <QDateTime>
-#include <QDebug.h>
+#include <QDebug>
 
-#define SERVER_CERT_FILE "D:/Libraries/Documents/Skola/armadill/server/test/ARMADILL.crt"
-#define SERVER_KEY_FILE "D:/Libraries/Documents/Skola/armadill/server/test/ARMADILL.key"
+#define SERVER_CERT_FILE "/home/marek/QTPROJECTS/armadill/server/test/ARMADILL.crt"
+#define SERVER_KEY_FILE "/home/marek/QTPROJECTS/armadill/server/test/ARMADILL.key"
 
 class CryptoException : public std::runtime_error {
 	int err;
@@ -38,12 +39,13 @@ public:
 		mbedtls_entropy_init(&entropy);
 		mbedtls_entropy_gather(&entropy);
 		//TODO: load server key
-		if (mbedtls_pk_parse_keyfile(&server_key, SERVER_KEY_FILE, nullptr) != 0)
+        if (mbedtls_pk_parse_keyfile(&server_key, SERVER_KEY_FILE, nullptr) != 0)
 		{
 			throw CryptoException("Unable to load server key.");
-		}
+        }
 		//TODO: load server crt
-		if (mbedtls_x509_crt_parse_file(&server_crt, SERVER_CERT_FILE) != 0)
+
+        if (mbedtls_x509_crt_parse_file(&server_crt, SERVER_CERT_FILE) != 0)
 		{
 			throw CryptoException("Unable to load server certificate.");
 		}
