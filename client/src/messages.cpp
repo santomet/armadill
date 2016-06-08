@@ -48,8 +48,11 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	ret.append(password.toUtf8().toBase64());
     ret.append(Messages::armaSeparator);
     ret.append(QString::number(port).toUtf8().toBase64());
-	ret.append(Messages::armaSeparator);
-	ret.append(req);
+	
+	if (!reg) {
+		ret.append(Messages::armaSeparator);
+		ret.append(req);
+	}
 	return ret;
 }
 
