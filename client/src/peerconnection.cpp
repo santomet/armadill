@@ -34,7 +34,7 @@ void PeerConnection::init() {
     }
     else {
         connect(mSoc, SIGNAL(connected()), this, SLOT(connectionSuccess()));
-        mSoc->connectToHost(mPeer.address, mPeer.listeningPort);
+        mSoc->connectToHostEncrypted(mPeer.address, mPeer.listeningPort);
     }
     mPeerAddress = mSoc->peerAddress().toString();
     mPeerPort = mSoc->peerPort();
@@ -43,6 +43,7 @@ void PeerConnection::init() {
 }
 
 void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
+	qDebug() << "sslErrors: " << errors;
 	if (errors.size() > 1) return;
 	if (errors.first().error() != QSslError::HostNameMismatch) return;
 
