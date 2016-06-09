@@ -30,6 +30,10 @@ void ClientConsole::init()
         connect(mServerConnection, SIGNAL(gotLoggedInPeers(QByteArray)), this, SLOT(loggedInPeersFromServer(QByteArray)));
         connect(this, SIGNAL(sendDataToServer(QByteArray)), mServerConnection, SLOT(sendDataToServer(QByteArray)));
 
+		QFile cert("test/ARMADILL.crt");
+		cert.open(QIODevice::ReadOnly);
+		QSslSocket::addDefaultCaCertificate(QSslCertificate(cert.readAll()));
+
         //peerServer
         startPeerServer();
 //        connect(mPeerServer, SIGNAL(newConnection(PeerConnection*)), this );
@@ -137,8 +141,8 @@ void ClientConsole::startPeerServer()
     connect(this, SIGNAL(connectionEstablished(PeerConnection*)), mPeerServer, SLOT(establishedConnection(PeerConnection*)));
 }
 
-void ClientConsole::userInput(QString Qline)
-{
+void ClientConsole::userInput(QString Qline) {
+	if (Qline.size() < 1) return;
 	if (Qline.at(0) == '/') {
 		ClientConsole::command(Qline.mid(1));
 		return;

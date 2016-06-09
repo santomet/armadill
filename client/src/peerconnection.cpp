@@ -33,6 +33,7 @@ void PeerConnection::init() {
     connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
 
     if(mSocDescriptor != 0) {
+		
         mSoc->setSocketDescriptor(mSocDescriptor);
         mSoc->startServerEncryption();
     }
