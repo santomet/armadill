@@ -18,8 +18,8 @@
 #include <QDateTime>
 #include <QDebug>
 
-#define SERVER_CERT_FILE "/home/marek/QTPROJECTS/armadill/server/test/ARMADILL.crt"
-#define SERVER_KEY_FILE "/home/marek/QTPROJECTS/armadill/server/test/ARMADILL.key"
+#define SERVER_CERT_FILE "test/ARMADILL.crt"
+#define SERVER_KEY_FILE "test/ARMADILL.key"
 
 class CryptoException : public std::runtime_error {
 	int err;
