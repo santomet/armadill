@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QtNetwork>
 #include <QThread>
+#include <iostream>
 #include "common.h"
 #include "messages.h"
 #include "serverconnection.h"
@@ -55,6 +56,8 @@ signals:
 public slots:
     void init();
     void sendDataToPeer(QByteArray a);
+    void successfulEncryptedConnection() {qDebug() << "Successful Encrypted Conenction";}
+    void stateChanged(QAbstractSocket::SocketState s) {qDebug() << s;}
 private slots:
     void connectionError(QAbstractSocket::SocketError error);
     void connectionSuccess() {emit peerConnected(mID);}

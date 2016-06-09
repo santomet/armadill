@@ -19,22 +19,26 @@ PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server
 void PeerConnection::init() {
     mSoc = new QSslSocket(this);
 	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
-	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
+    mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
 	//TODO: add my certificate
-	mSoc->setLocalCertificate(Messages::localCert);
-	mSoc->setPrivateKey(Messages::localKey);
+    mSoc->setLocalCertificate(Messages::localCert);
+    mSoc->setPrivateKey(Messages::localKey);
+    std::cout << mSoc->localCertificate().toText().toStdString() << std::endl;
 
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(disconnected()));
+//    connect(mSoc, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(stateChanged(QAbstractSocket::SocketState)));
+    connect(mSoc, SIGNAL(encrypted()), this, SLOT(successfulEncryptedConnection()));
+    connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
 
     if(mSocDescriptor != 0) {
-		connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
         mSoc->setSocketDescriptor(mSocDescriptor);
+        mSoc->startServerEncryption();
     }
     else {
         connect(mSoc, SIGNAL(connected()), this, SLOT(connectionSuccess()));
-        mSoc->connectToHost(mPeer.address, mPeer.listeningPort);
+        mSoc->connectToHostEncrypted(mPeer.address, mPeer.listeningPort, mPeer.name);
     }
     mPeerAddress = mSoc->peerAddress().toString();
     mPeerPort = mSoc->peerPort();
@@ -43,13 +47,14 @@ void PeerConnection::init() {
 }
 
 void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
-	if (errors.size() > 1) return;
-	if (errors.first().error() != QSslError::HostNameMismatch) return;
+//    if (errors.size() > 1) return;
+//    if (errors.first().error() != QSslError::HostNameMismatch) return;
 
-	//QStringList name = errors.first().certificate().subjectInfo(QSslCertificate::SubjectInfo::CommonName);
-	//if (name.size() != 1) return;
+    //QStringList name = errors.first().certificate().subjectInfo(QSslCertificate::SubjectInfo::CommonName);
+    std::cout << mSoc->peerCertificate().toText().toStdString() << std::endl;
+    //if (name.size() != 1) return;
 
-	emit mSoc->ignoreSslErrors();
+    mSoc->ignoreSslErrors();
 }
 
 void PeerConnection::sendDataToPeer(QByteArray a)
