@@ -21,8 +21,8 @@ void PeerConnection::init() {
 	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
 	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
 	//TODO: add my certificate
-	//mSoc->setLocalCertificate(localCert);
-	//mSoc->setPrivateKey(privateKey);
+	mSoc->setLocalCertificate(Messages::localCert);
+	mSoc->setPrivateKey(Messages::localKey);
 
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
