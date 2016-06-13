@@ -24,7 +24,6 @@ void PeerConnection::init() {
 	//TODO: add my certificate
     mSoc->setLocalCertificate(Messages::localCert);
     mSoc->setPrivateKey(Messages::localKey);
-	std::cout << mSoc->localCertificate().toText().toStdString() << std::endl;
 
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
@@ -48,14 +47,16 @@ void PeerConnection::init() {
 }
 
 void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
-//    if (errors.size() > 1) return;
-//    if (errors.first().error() != QSslError::HostNameMismatch) return;
-
-    //QStringList name = errors.first().certificate().subjectInfo(QSslCertificate::SubjectInfo::CommonName);
-    std::cout << mSoc->peerCertificate().toText().toStdString() << std::endl;
-    //if (name.size() != 1) return;
+	if (errors.size() > 1) return;
+	if (errors.first().error() != QSslError::HostNameMismatch) return;
 
     mSoc->ignoreSslErrors();
+}
+
+void PeerConnection::successfulEncryptedConnection() { 
+	mPeer.name = mSoc->peerCertificate().subjectInfo(QSslCertificate::CommonName).at(0);
+	qDebug() << mPeer.name;
+	qDebug() << "Successful Encrypted Conenction"; 
 }
 
 void PeerConnection::sendDataToPeer(QByteArray a)

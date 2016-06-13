@@ -56,7 +56,7 @@ signals:
 public slots:
     void init();
     void sendDataToPeer(QByteArray a);
-    void successfulEncryptedConnection() {qDebug() << "Successful Encrypted Conenction";}
+	void successfulEncryptedConnection();
     void stateChanged(QAbstractSocket::SocketState s) {qDebug() << s;}
 private slots:
     void connectionError(QAbstractSocket::SocketError error);
