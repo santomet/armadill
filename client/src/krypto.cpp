@@ -25,6 +25,8 @@ void Krypto::createCert(QByteArray &priv, QByteArray &request, const QString com
 	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,(const unsigned char *)pers,strlen(pers))
 		!= 0)
 	{
+		mbedtls_ctr_drbg_free(&ctr_drbg);
+		mbedtls_entropy_free(&entropy);
 		throw new KryptoException("Generating entropy for RSA pair failed.");
 	}
 
@@ -32,6 +34,8 @@ void Krypto::createCert(QByteArray &priv, QByteArray &request, const QString com
 	if (mbedtls_rsa_gen_key(mbedtls_pk_rsa(pk), mbedtls_ctr_drbg_random, &ctr_drbg, RSA_SIZE, RSA_EXPONENT)
 		!= 0)
 	{
+		mbedtls_ctr_drbg_free(&ctr_drbg);
+		mbedtls_entropy_free(&entropy);
 		throw new KryptoException("Generating RSA pair failed.");
 	}
 
@@ -143,9 +147,18 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 
     int ret_success;
     if ((ret_success = mbedtls_gcm_auth_decrypt(&ctx, dataLength, toUChar(message) + 1, IV_LENGTH, toUChar(data), data.length(), toUChar(message) + 1 + IV_LENGTH, TAG_LENGTH, toUChar(message) + 1 + IV_LENGTH +TAG_LENGTH, output))) {
-        if(ret_success == MBEDTLS_ERR_GCM_AUTH_FAILED)		throw KryptoException("Authentication of message failed");
-        else if(ret_success == MBEDTLS_ERR_GCM_BAD_INPUT)	throw KryptoException("Bad message data for unprotect");
-        else												throw KryptoException("Unknown Error");
+		if (ret_success == MBEDTLS_ERR_GCM_AUTH_FAILED)	{
+			mbedtls_gcm_free(&ctx);
+			throw KryptoException("Authentication of message failed");
+		}
+		else if (ret_success == MBEDTLS_ERR_GCM_BAD_INPUT) {
+			mbedtls_gcm_free(&ctx);
+			throw KryptoException("Bad message data for unprotect");
+		}
+		else {
+			mbedtls_gcm_free(&ctx);
+			throw KryptoException("Unknown Error");
+		}
     }
 
     QByteArray ret(reinterpret_cast<const char *> (output), dataLength);
