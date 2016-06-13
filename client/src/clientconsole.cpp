@@ -50,7 +50,7 @@ void ClientConsole::loginSuccess(QByteArray cert) {
 	qDebug() << "You can load peers from server (p)"; 
 	mExpectedInput = Idle;
 
-	cert[cert.length() - 1] = '\0';
+	cert.append('\0');
 	qDebug() << cert;
 
 	char info[4096];
