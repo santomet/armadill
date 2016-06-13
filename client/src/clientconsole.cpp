@@ -85,34 +85,37 @@ static void sendingHelperFunc(PeerConnection * ptr, const QByteArray & data) {
 void ClientConsole::connectToPeer(peer p)
 {
     PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
+    connect(peerConn, SIGNAL(peerConnected(int)), this, SLOT(connectionSuccessful(int)));
+    connect(peerConn, SIGNAL(dataReady(int,QByteArray)), this, SLOT(dataFromPeerReady(int,QByteArray)));
 	int i = currentID++;
     peerConn->setID(i);
     mPeerConnections.insert(i, peerConn);
-    Session *s = new Session(mNickName, p.name, &mTLS_entropy);
-	s->setSender(std::bind(sendingHelperFunc, peerConn, std::placeholders::_1));
-    mPeerSessions.insert(i, s);
-    mNickConnectionMap.insert(p.name, i);
+
 }
 
 void ClientConsole::connectionSuccessful(int id)
 {
+    PeerConnection *c = mPeerConnections.value(id);
+    Session *s = new Session(mNickName, c->getPeer().name, &mTLS_entropy);
+    s->setSender(std::bind(sendingHelperFunc, c, std::placeholders::_1));
+    mPeerSessions.insert(id, s);
+    mNickConnectionMap.insert(c->getPeer().name, id);
+
+    //TODO tuna by som asi medzi nimi len poslal prazdnu spravu. Ale uz nepamatam, ty lepsie poznas jak spravy funguju
+    //Poznamka: sendDataToPeer() odosiela vzdy peerovi, ktoreho id je v mActivePeer, to sa teraz pouziva aj pri obycajnych spravach
     mActivePeer = id;
-    QByteArray identifyMessage;
-    identifyMessage.append(Messages::armaSeparator); //only controller messages starts with separator
-    identifyMessage.append("i"); //identification
-    identifyMessage.append(Messages::armaSeparator);
-    identifyMessage.append(mNickName);
-    emit sendDataToPeer(identifyMessage);
-    mExpectedInput = Message;
     qDebug() << "identification sent, type message";
-    emit sendDataToPeer(mMessages->addMessageHeader(*(mPeerSessions.value(id)), QString("").toUtf8(), Messages::MsgType::PureDH, Messages::MsgType::PureDH));
+    sendDataToPeer(mMessages->addMessageHeader(*(mPeerSessions.value(id)), QString("").toUtf8(), Messages::MsgType::PureDH, Messages::MsgType::PureDH));
+    this->mExpectedInput = ExpectedUserInput::Message;
 }
 
 void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
 {
-    int i = currentID++;;
+    connect(c, SIGNAL(dataReady(int,QByteArray)), this, SLOT(dataFromPeerReady(int,QByteArray)));
+    int i = currentID++;
     mPeerConnections.insert(i, c);
     c->setID(i);
+    connect(c, SIGNAL(peerConnected(int)), this, SLOT(connectionSuccessful(int)));
 }
 
 Session & sessionHandler(ClientConsole & c, const QString & nick) {
@@ -124,26 +127,9 @@ Session & sessionHandler(ClientConsole & c, const QString & nick) {
 
 void ClientConsole::dataFromPeerReady(int id, QByteArray a)
 {
-    if(a.at(0) == Messages::armaSeparator)
-    {
-        QList<QByteArray> identifyMessage = a.split(Messages::armaSeparator);
-        if(identifyMessage.at(0) == "i")
-        {
-            QString nick = identifyMessage.at(1);
-            mNickConnectionMap.insert(nick, id);
-            mPeerSessions.insert(id, new Session(mNickName, nick, &mTLS_entropy));
-            mExpectedInput = Message;
-            qDebug() << "remote peer identified as: " << nick;
-        }
-        else
-            qDebug() << "Unknown identify message";
-    }
-    else
-    {
-        QString parsedMessage;
-		Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, Messages::callbackHandler);
-        qDebug() << parsedMessage;
-    }
+    QString parsedMessage;
+    Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, Messages::callbackHandler);
+    qDebug() << "DATA supposed nickname(from connection) : " << mNickConnectionMap.key(id) << "MESSAGE: " << parsedMessage;
 }
 
 
@@ -191,7 +177,7 @@ void ClientConsole::userInput(QString Qline) {
 		}
         break;
     case Message:
-        emit sendDataToPeer(mMessages->createRegularMessage(*mPeerSessions.value(mActivePeer), Qline));
+        sendDataToPeer(mMessages->createRegularMessage(*mPeerSessions.value(mActivePeer), Qline));
         break;
     case LoginOrRegister :
         if(Qline == "l")
@@ -234,7 +220,11 @@ void ClientConsole::userInput(QString Qline) {
     }
 }
 
-
+void ClientConsole::sendDataToPeer(QByteArray a)
+{
+    PeerConnection *p = this->mPeerConnections.value(mActivePeer);
+    p->sendDataToPeer(a);
+}
 
 void ClientConsole::command(QString cmdtext) {
 	if (cmdtext == "exit") {

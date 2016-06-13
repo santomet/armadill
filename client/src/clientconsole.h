@@ -84,7 +84,6 @@ signals:
     void exitNormal();
     void sendDataToServer(QByteArray a);
 
-    void sendDataToPeer(QByteArray a);
     void connectionEstablished(PeerConnection *c);
 
 public slots:
@@ -105,6 +104,7 @@ public slots:
     void newRemoteInitiatedConnection(PeerConnection *c);
     void endConnection(PeerConnection *c) {} //remote-initiated before established
     void endConnection(int id) {} //self-initiated/established //TODO both
+    void sendDataToPeer(QByteArray a);
 
     void dataFromPeerReady(int id, QByteArray a);
 
