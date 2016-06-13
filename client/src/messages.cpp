@@ -36,7 +36,7 @@ Messages::ArmaMessage Messages::createRegularMessage(Session & session, const QS
 
 Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString & password, int port, bool reg) {
 	QByteArray req, key;
-	Krypto::createCert(key, req, "CN=" + name);
+	Krypto::createCert(key, req, "C=SK,O=Armadill,CN=" + name);
 	localKey = QSslKey(key, QSsl::KeyAlgorithm::Rsa);
 
     //TODO: certificate and port

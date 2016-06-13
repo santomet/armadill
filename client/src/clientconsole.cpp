@@ -1,5 +1,9 @@
 #include "clientconsole.h"
 
+#define MBEDTLS_PEM_PARSE_C
+
+#include "../../include/mbedtls/x509_crt.h"
+
 ClientConsole::ClientConsole(QStringList hostPort, QObject *parent) : QObject(parent),
     mServer(hostPort)
 {
@@ -45,8 +49,21 @@ void ClientConsole::init()
 void ClientConsole::loginSuccess(QByteArray cert) {
 	qDebug() << "You can load peers from server (p)"; 
 	mExpectedInput = Idle;
+
+	cert[cert.length() - 1] = '\0';
+	qDebug() << cert;
+
+	char info[4096];
+	mbedtls_x509_crt mcrt;
+	mbedtls_x509_crt_init(&mcrt);
+	mbedtls_x509_crt_parse(&mcrt, reinterpret_cast<uchar *>(cert.data()), cert.length()+1);
+	mbedtls_x509_crt_info(info, 4000, "", &mcrt);
+	std::cout << info << endl;
+	mbedtls_x509_crt_free(&mcrt);
+
 	Messages::localCert = QSslCertificate(cert);
 	qDebug() << Messages::localCert;
+	qDebug() << Messages::localCert.subjectInfo(QSslCertificate::SubjectInfo::CommonName);
 }
 
 void ClientConsole::loggedInPeersFromServer(QByteArray a)

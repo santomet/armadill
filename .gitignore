@@ -82,3 +82,5 @@ server/Win32/*
 *.t
 server/testdb.sql
 server/testdb.sql-journal
+Crt Reader/
+Csr Reader/

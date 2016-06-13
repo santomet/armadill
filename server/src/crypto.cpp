@@ -31,12 +31,12 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	char info[4000];
 	mbedtls_x509_csr_info(info, 4000, "", &subject_request);
 	QByteArray name(info);
-	int start = name.indexOf("CN=") + 3;
+	int start = name.indexOf("C=");
 	name = name.mid(start, name.indexOf('\n', start) - start);
 
 	qDebug() << name;
 
-	mbedtls_x509write_crt_set_subject_name(&crt, name.data());
+	if(ret = mbedtls_x509write_crt_set_subject_name(&crt, name.data())) throw CryptoException("Can't set subject name in certificate!", ret);
 	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
 
 	//check issuer key and certificate
@@ -51,7 +51,15 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 
 	mbedtls_x509write_crt_set_serial(&crt, &serial);
 	mbedtls_x509write_crt_set_issuer_key(&crt, &server_key);
-	mbedtls_x509write_crt_set_issuer_name(&crt, (const char *)&server_crt.issuer.val.p);
+
+	mbedtls_x509_crt_info(info, 4000, "", &server_crt);
+	name = info;
+	start = name.indexOf("C=");
+	name = name.mid(start, name.indexOf('\n', start) - start);
+
+	qDebug() << name;
+
+	mbedtls_x509write_crt_set_issuer_name(&crt, name.data());
 
 	if (mbedtls_x509write_crt_set_validity(&crt,
 		QDateTime::currentDateTimeUtc().toString("yyyyMMddhhmmss").toStdString().c_str(),
@@ -71,6 +79,10 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	if(ret = mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg)) throw CryptoException("Certificate write error.", ret);
 	cert = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
 
+	mbedtls_x509_crt mcrt;
+	mbedtls_x509_crt_parse(&mcrt, output, 4096);
+	mbedtls_x509_crt_info(info, 4000, "", &mcrt);
+	std::cout << info << endl;
 	return true;
 }
 
