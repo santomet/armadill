@@ -28,7 +28,15 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	std::cout << req.toStdString() << std::endl;
 	if(ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) throw CryptoException("Can't read csr.", ret);
 
-	mbedtls_x509write_crt_set_subject_name(&crt, (const char *)&subject_request.subject.val.p);
+	char info[4000];
+	mbedtls_x509_csr_info(info, 4000, "", &subject_request);
+	QByteArray name(info);
+	int start = name.indexOf("CN=") + 3;
+	name = name.mid(start, name.indexOf('\n', start) - start);
+
+	qDebug() << name;
+
+	mbedtls_x509write_crt_set_subject_name(&crt, name.data());
 	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
 
 	//check issuer key and certificate

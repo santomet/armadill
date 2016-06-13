@@ -1,4 +1,5 @@
 #include "peerconnection.h"
+#include <iostream>
 
 PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server, QObject *parent)
     : QObject(parent), mPeer(_peer), mServer(server), mSocDescriptor(soc)
@@ -23,7 +24,7 @@ void PeerConnection::init() {
 	//TODO: add my certificate
     mSoc->setLocalCertificate(Messages::localCert);
     mSoc->setPrivateKey(Messages::localKey);
-    std::cout << mSoc->localCertificate().toText().toStdString() << std::endl;
+	std::cout << mSoc->localCertificate().toText().toStdString() << std::endl;
 
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(deleteLater()));
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
@@ -33,7 +34,6 @@ void PeerConnection::init() {
     connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrorsClient(const QList<QSslError> &)));
 
     if(mSocDescriptor != 0) {
-		
         mSoc->setSocketDescriptor(mSocDescriptor);
         mSoc->startServerEncryption();
     }
