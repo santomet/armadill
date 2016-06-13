@@ -67,6 +67,13 @@ public:
 	*							(QByteArray will be overwritten)
 	*/
 	bool createCert(QString userName, QByteArray req, QByteArray& cert);
+private:
+	void freeContexts(mbedtls_pk_context *subject_key, mbedtls_x509write_cert *crt, mbedtls_ctr_drbg_context *ctr_drbg, mbedtls_x509_csr *subject_request) {
+		mbedtls_pk_free(subject_key);
+		mbedtls_x509write_crt_free(crt);
+		mbedtls_ctr_drbg_free(ctr_drbg);
+		mbedtls_x509_csr_free(subject_request);
+	}
 };
 
 class PasswordManager {

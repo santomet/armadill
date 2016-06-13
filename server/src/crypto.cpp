@@ -19,14 +19,16 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	mbedtls_pk_init(&subject_key);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 
-
 	const char *pers = "crt creation";
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
 
     req.append('\0'); //must be null terminated string
 
 	std::cout << req.toStdString() << std::endl;
-	if(ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) throw CryptoException("Can't read csr.", ret);
+	if (ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) {
+		freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
+		throw CryptoException("Can't read csr.", ret);
+	}
 
 	char info[4000];
 	mbedtls_x509_csr_info(info, 4000, "", &subject_request);
@@ -46,6 +48,7 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 		mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa(server_crt.pk)->E,
 		&mbedtls_pk_rsa(server_key)->E) != 0)
 	{
+		freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
 		throw new CryptoException("Server certificate and key do not match.");
 	}
 
@@ -63,8 +66,10 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 
 	if (mbedtls_x509write_crt_set_validity(&crt,
 		QDateTime::currentDateTimeUtc().toString("yyyyMMddhhmmss").toStdString().c_str(),
-		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str()))
+		QDateTime::currentDateTimeUtc().addDays(1).toString("yyyyMMddhhmmss").toStdString().c_str())) {
+		freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
 		throw CryptoException("Certificate validity time error.");
+	}
 
 	mbedtls_x509write_crt_set_basic_constraints(&crt, 0, 10);
 
@@ -76,13 +81,18 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	//export certificate
 	unsigned char output[4096];
 	memset(output, 0, 4096);
-	if(ret = mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg)) throw CryptoException("Certificate write error.", ret);
+	if (ret = mbedtls_x509write_crt_pem(&crt, output, 4096, mbedtls_ctr_drbg_random, &ctr_drbg)) {
+		freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
+		throw CryptoException("Certificate write error.", ret);
+	}
 	cert = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
 
 	mbedtls_x509_crt mcrt;
 	mbedtls_x509_crt_parse(&mcrt, output, 4096);
 	mbedtls_x509_crt_info(info, 4000, "", &mcrt);
 	std::cout << info << endl;
+
+	freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
 	return true;
 }
 
