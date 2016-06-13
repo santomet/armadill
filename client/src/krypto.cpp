@@ -62,11 +62,6 @@ void Krypto::createCert(QByteArray &priv, QByteArray &request, const QString com
 	mbedtls_entropy_free(&entropy);
 }
 
-bool Krypto::verifyCert(const QByteArray pubToVerify, const QByteArray pubCA) {
-	//TODO
-	return true;
-}
-
 SessionKey::HelperMpi SessionKey::helper;
 
 void SessionKey::setDH(QByteArray dh) {

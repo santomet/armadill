@@ -87,7 +87,6 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
     else
         return false;
 
-    //TODO certificate
     QString nickname = QString::fromUtf8(QByteArray::fromBase64(list.at(1)));
     QString password = QString::fromUtf8(QByteArray::fromBase64(list.at(2)));
 	int port = QString::fromUtf8(QByteArray::fromBase64(list.at(3))).toInt();
@@ -97,8 +96,7 @@ bool ClientConnection::parseLoginMessage(QByteArray& message) {
         if(!mServerManager->newRegistration(nickname, password)) {
             this->sendDataToClient("m#REG_FAIL");
         }
-        else
-        {
+        else {
             this->sendDataToClient("m#REG_SUCC");
         }
     }

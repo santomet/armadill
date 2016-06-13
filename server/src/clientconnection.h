@@ -6,6 +6,7 @@
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QThread>
+#include <QTextStream>
 
 class ClientConnection : public QObject
 {

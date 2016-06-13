@@ -20,8 +20,6 @@ void PeerConnection::init() {
     mSoc = new QSslSocket(this);
 	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
     mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
-    //TODO: Tu by sa socketu este zislo nastavit CA
-    //mSoc->setCaCertificates(QList<QSslCertificate>() << QSslCertificate(CERTIFIKAT_TU));
     mSoc->setLocalCertificate(Messages::localCert);
     mSoc->setPrivateKey(Messages::localKey);
 
@@ -56,10 +54,7 @@ void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
 }
 
 void PeerConnection::successfulEncryptedConnection() { 
-    //TODO: Tuna ukladam do mPeer meno z certifikatu
 	mPeer.name = mSoc->peerCertificate().subjectInfo(QSslCertificate::CommonName).at(0);
-	qDebug() << mPeer.name;
-	qDebug() << "Successful Encrypted Conenction"; 
 }
 
 void PeerConnection::sendDataToPeer(QByteArray a)

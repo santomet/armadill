@@ -19,7 +19,6 @@
 #include <QJsonDocument>
 #include <QtConcurrent>
 
-
 /**
  * @brief The Messages class                    Originally intended to be used as session (separate object for every peer) but somehow diverted into a namespace...
  */
@@ -90,28 +89,6 @@ public:
 
     Messages(peer *peerToConnect, QObject *parent = 0);
     ~Messages();
-
-
-	static void callbackHandler(Session & session, MsgType type, const ReceivedMessage & payload) {
-		switch (type) {
-		case RegularMessage:
-		case RegularMessageDH:
-			//TODO: print message on terminal 
-			break;
-		case FileMessage:
-		case FileMessageDH:
-			FileReceivingContext::receiveChunk(session, payload.messageText);
-			break;
-		case FileResponse:
-		case FileResponseDH:
-			FileSendingContext::confirmFile(session, payload.messageText);
-			break;
-		case FileContext:
-		case FileContextDH:
-			FileReceivingContext::receiveFile(session, payload.messageText);
-			break;
-		}
-	};
 
     /*!
      * \brief parseMessage              Parses message and makes proper actions
@@ -251,6 +228,10 @@ public:
 //---------------------------Others---------------------------------------------------
     Krypto mKrypto;
     peer *mPeer;    //actual peer we are communicating with
+
+
+signals:
+	void writeString(QString str);
 
 };
 

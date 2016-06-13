@@ -18,11 +18,10 @@ class ClientConsole : public QObject
     friend class UTest;
     Q_OBJECT
 public:
-    explicit ClientConsole(QStringList hostPort, QObject *parent = 0);
-
-
+    explicit ClientConsole(QStringList hostPort, QTextStream & out, QObject *parent = 0);
 private:
 
+	QTextStream & Out;
     /**
      * @brief mInputHelper                  stdin reading cycle in separate thread
      */
@@ -79,6 +78,8 @@ private:
 
 	void command(QString);
 
+	void callbackHandler(Session & session, Messages::MsgType type, const Messages::ReceivedMessage & payload);
+
 	friend Session & sessionHandler(ClientConsole & c, const QString &);
 signals:
     void exitNormal();
@@ -94,8 +95,8 @@ public slots:
     //client-server
     void serverConnected() {mExpectedInput = LoginOrRegister;}
 	void loginSuccess(QByteArray);
-    void registrationSuccess() {qDebug() << "You can now log in (l) or register new account(r)"; mExpectedInput = LoginOrRegister;}
-    void fail() {qDebug() << "Please try again - login(l) or register(r)"; mExpectedInput = LoginOrRegister;}
+    void registrationSuccess() {Out << "You can now log in (l) or register new account(r)" << endl; mExpectedInput = LoginOrRegister;}
+    void fail() {Out << "Please try again - login(l) or register(r)" << endl; mExpectedInput = LoginOrRegister;}
     void loggedInPeersFromServer(QByteArray a);
 
     //peer
@@ -111,11 +112,12 @@ public slots:
     //peerServer
     void startPeerServer();
 
-
+	void writeString(QString str) {
+		Out << str;
+	};
 
 protected slots:
     void userInput(QString Qline);
-
 
 };
 

@@ -38,15 +38,12 @@ public:
 	CertificateManager() {
 		mbedtls_entropy_init(&entropy);
 		mbedtls_entropy_gather(&entropy);
-		//TODO: load server key
-        if (mbedtls_pk_parse_keyfile(&server_key, SERVER_KEY_FILE, nullptr) != 0)
-		{
+
+        if (mbedtls_pk_parse_keyfile(&server_key, SERVER_KEY_FILE, nullptr) != 0) {
 			throw CryptoException("Unable to load server key.");
         }
-		//TODO: load server crt
 
-        if (mbedtls_x509_crt_parse_file(&server_crt, SERVER_CERT_FILE) != 0)
-		{
+        if (mbedtls_x509_crt_parse_file(&server_crt, SERVER_CERT_FILE) != 0) {
 			throw CryptoException("Unable to load server certificate.");
 		}
 		mbedtls_mpi_init(&serial);

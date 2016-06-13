@@ -53,7 +53,7 @@ public:
      * \param pubCA             PEM certificate which should have signed pubToVerify
      * \return                  True if pubToVerify is properly signed by pubCA
      */
-    bool verifyCert(const QByteArray pubToVerify, const QByteArray pubCA);
+    // bool verifyCert(const QByteArray pubToVerify, const QByteArray pubCA);
 //---------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------

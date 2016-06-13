@@ -38,7 +38,7 @@ void ServerConnection::dataFromServerReady()
     QByteArray a = mSoc->readAll();
 //    qDebug() << "we've got data from server!";
     if(a.at(0) == 'm') {
-        qDebug() << "Message from server: " << a.mid(2);
+        // qDebug() << "Message from server: " << a.mid(2);
         if(a.mid(2, 8) == "LOG_SUCC")
             emit loginSuccess(a.mid(11));
         else if(a.contains("LOG_FAIL") || a.contains("REG_FAIL"))

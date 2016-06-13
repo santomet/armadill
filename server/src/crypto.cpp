@@ -24,7 +24,6 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 
     req.append('\0'); //must be null terminated string
 
-	std::cout << req.toStdString() << std::endl;
 	if (ret = mbedtls_x509_csr_parse(&subject_request, toUChar(req), req.length())) {
 		freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
 		throw CryptoException("Can't read csr.", ret);
@@ -36,7 +35,7 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	int start = name.indexOf("C=");
 	name = name.mid(start, name.indexOf('\n', start) - start);
 
-	qDebug() << name;
+	// qDebug() << name;
 
 	if(ret = mbedtls_x509write_crt_set_subject_name(&crt, name.data())) throw CryptoException("Can't set subject name in certificate!", ret);
 	mbedtls_x509write_crt_set_subject_key(&crt, &subject_request.pk);
@@ -60,7 +59,7 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 	start = name.indexOf("C=");
 	name = name.mid(start, name.indexOf('\n', start) - start);
 
-	qDebug() << name;
+	// qDebug() << name;
 
 	mbedtls_x509write_crt_set_issuer_name(&crt, name.data());
 
@@ -86,11 +85,6 @@ bool CertificateManager::createCert(QString userName, QByteArray req, QByteArray
 		throw CryptoException("Certificate write error.", ret);
 	}
 	cert = QByteArray(reinterpret_cast<const char *>(output), strlen(reinterpret_cast<const char *>(output)));
-
-	mbedtls_x509_crt mcrt;
-	mbedtls_x509_crt_parse(&mcrt, output, 4096);
-	mbedtls_x509_crt_info(info, 4000, "", &mcrt);
-	std::cout << info << endl;
 
 	freeContexts(&subject_key, &crt, &ctr_drbg, &subject_request);
 	return true;

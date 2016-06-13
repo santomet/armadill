@@ -4,21 +4,19 @@
 
 #include "../../include/mbedtls/x509_crt.h"
 
-ClientConsole::ClientConsole(QStringList hostPort, QObject *parent) : QObject(parent),
-    mServer(hostPort)
-{
+ClientConsole * clientConsole;
+
+ClientConsole::ClientConsole(QStringList hostPort, QTextStream & out, QObject *parent) : QObject(parent), mServer(hostPort), Out(out) {
+	clientConsole = this;
 }
 
 void ClientConsole::init()
 {
-    if(mServer.count() < 2)
-    {
-        qDebug() << "Incorrect usage. Please use -h for help";
+    if(mServer.count() < 2) {
+        Out << "Incorrect usage. Please use -h for help" << endl;
         QCoreApplication::exit(1);
     }
-    else
-    {
-		std::cin.get();
+    else {
         mbedtls_entropy_init(&mTLS_entropy); //start an entropy
         mbedtls_entropy_gather(&mTLS_entropy);
 
@@ -47,34 +45,23 @@ void ClientConsole::init()
 }
 
 void ClientConsole::loginSuccess(QByteArray cert) {
-	qDebug() << "You can load peers from server (p)"; 
+	Out << "You can load peers from server (p)" << endl; 
 	mExpectedInput = Idle;
 
 	cert.append('\0');
-	qDebug() << cert;
-
-	char info[4096];
-	mbedtls_x509_crt mcrt;
-	mbedtls_x509_crt_init(&mcrt);
-	mbedtls_x509_crt_parse(&mcrt, reinterpret_cast<uchar *>(cert.data()), cert.length()+1);
-	mbedtls_x509_crt_info(info, 4000, "", &mcrt);
-	std::cout << info << endl;
-	mbedtls_x509_crt_free(&mcrt);
 
 	Messages::localCert = QSslCertificate(cert);
-	qDebug() << Messages::localCert;
-	qDebug() << Messages::localCert.subjectInfo(QSslCertificate::SubjectInfo::CommonName);
 }
 
 void ClientConsole::loggedInPeersFromServer(QByteArray a)
 {
     mMessages->parseJsonUsers(a, mOnlinePeerList);
-    qDebug() << "logged in peers: " << mOnlinePeerList.count();
-    foreach(peer p, mOnlinePeerList)
-    {
-        qDebug() << "nick: " << p.name << " addr: " << p.address << " port: " << p.listeningPort;
+    Out << "logged in peers: " << mOnlinePeerList.count() << endl;
+    foreach(peer p, mOnlinePeerList) {
+		Out << "nick: " << p.name << endl;
+		// qDebug() << "nick: " << p.name << " addr: " << p.address << " port: " << p.listeningPort;
     }
-    qDebug() << "write nickname to connect to peer";
+    Out << "write nickname to connect to peer" << endl;
 }
 
 
@@ -101,10 +88,8 @@ void ClientConsole::connectionSuccessful(int id)
     mPeerSessions.insert(id, s);
     mNickConnectionMap.insert(c->getPeer().name, id);
 
-    //TODO tuna by som asi medzi nimi len poslal prazdnu spravu. Ale uz nepamatam, ty lepsie poznas jak spravy funguju
-    //Poznamka: sendDataToPeer() odosiela vzdy peerovi, ktoreho id je v mActivePeer, to sa teraz pouziva aj pri obycajnych spravach
     mActivePeer = id;
-    qDebug() << "identification sent, type message";
+    // qDebug() << "identification sent, type message";
     sendDataToPeer(mMessages->addMessageHeader(*(mPeerSessions.value(id)), QString("").toUtf8(), Messages::MsgType::PureDH, Messages::MsgType::PureDH));
     this->mExpectedInput = ExpectedUserInput::Message;
 }
@@ -127,11 +112,31 @@ Session & sessionHandler(ClientConsole & c, const QString & nick) {
 
 void ClientConsole::dataFromPeerReady(int id, QByteArray a)
 {
-    QString parsedMessage;
-    Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, Messages::callbackHandler);
-    qDebug() << "DATA supposed nickname(from connection) : " << mNickConnectionMap.key(id) << "MESSAGE: " << parsedMessage;
+    QString parsedMessage(QString::fromUtf8(a));
+    Messages::parseMessage(std::bind(sessionHandler, std::ref(*this), std::placeholders::_1), a, [=](Session & session, Messages::MsgType type, const Messages::ReceivedMessage & payload) { this->callbackHandler(session, type, payload); });
+    // qDebug() << "DATA supposed nickname(from connection) : " << mNickConnectionMap.key(id) << "MESSAGE: " << parsedMessage;
 }
 
+void ClientConsole::callbackHandler(Session & session, Messages::MsgType type, const Messages::ReceivedMessage & payload) {
+	switch (type) {
+	case Messages::RegularMessage:
+	case Messages::RegularMessageDH:
+		Out << session.getPartnerName() << ": " << payload.messageText << endl;
+		break;
+	case Messages::FileMessage:
+	case Messages::FileMessageDH:
+		Messages::FileReceivingContext::receiveChunk(session, payload.messageText);
+		break;
+	case Messages::FileResponse:
+	case Messages::FileResponseDH:
+		Messages::FileSendingContext::confirmFile(session, payload.messageText);
+		break;
+	case Messages::FileContext:
+	case Messages::FileContextDH:
+		Messages::FileReceivingContext::receiveFile(session, payload.messageText);
+		break;
+	}
+};
 
 
 void ClientConsole::startPeerServer()
@@ -153,7 +158,7 @@ void ClientConsole::userInput(QString Qline) {
     switch (mExpectedInput)
     {
     case None :
-        qDebug() << "Unexpected input!";
+       Out << "Wait please!" << endl;
         break;
     case Idle :
         if(Qline == "p")
@@ -168,7 +173,7 @@ void ClientConsole::userInput(QString Qline) {
 			}
 			if (peerToConnect.name.isEmpty())
 			{
-				qDebug() << "selected peer not found";
+				Out << "Selected peer not found. Please try again:" << endl;
 			}
 			else {
 				connectToPeer(peerToConnect);
@@ -183,35 +188,35 @@ void ClientConsole::userInput(QString Qline) {
         if(Qline == "l")
         {
             mExpectedInput = NickNameLogin;
-            qDebug() << "Nick:";
+            Out << "Nick:" << endl;
         }
         else if(Qline == "r")
         {
             mExpectedInput = NickNameRegister;
-            qDebug() << "select nickname:";
+            Out << "Choose nickname: " << endl;
         }
         else
-            qDebug() << "WRONG ANSWER!";
+            Out << "Unknown command!" << endl;
         break;
     case NickNameLogin :
         mNickName = Qline;
-        qDebug() << "Password:";
+        Out << "Password:" << endl;
         mExpectedInput = PasswordLogin;
         break;
     case NickNameRegister :
         mNickName = Qline;
-        qDebug() << "plese select password:";
+        Out << "Plese select password:" << endl;
         mExpectedInput = PasswordRegister;
         break;
     case PasswordLogin :
         mPassword = Qline;
-        qDebug() << mNickName << ":" << mPassword;
+        // qDebug() << mNickName << ":" << mPassword;
         emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, mListeningPort, false));
         mExpectedInput = None;
         break;
     case PasswordRegister :
         mPassword = Qline;
-        qDebug() << mNickName << ":" << mPassword;
+        // qDebug() << mNickName << ":" << mPassword;
         emit sendDataToServer(mMessages->createLoginMessage(mNickName, mPassword, mListeningPort, true));
         mExpectedInput = None;
         break;

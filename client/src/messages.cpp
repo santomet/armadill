@@ -39,7 +39,6 @@ Messages::ArmaMessage Messages::createLoginMessage(QString & name, const QString
 	Krypto::createCert(key, req, "C=SK,O=Armadill,CN=" + name);
 	localKey = QSslKey(key, QSsl::KeyAlgorithm::Rsa);
 
-    //TODO: certificate and port
 	ArmaMessage ret;
     ret.append(reg ? "r" : "l");
     ret.append(Messages::armaSeparator);
