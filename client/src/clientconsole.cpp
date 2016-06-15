@@ -20,6 +20,10 @@ void ClientConsole::init()
         mbedtls_entropy_init(&mTLS_entropy); //start an entropy
         mbedtls_entropy_gather(&mTLS_entropy);
 
+		QFile cert("test/ARMADILL.crt");
+		cert.open(QIODevice::ReadOnly);
+		QSslSocket::addDefaultCaCertificate(QSslCertificate(cert.readAll()));
+
         mInputHelper = new UserInputHelper();
         connect(mInputHelper, SIGNAL(inputReady(QString)), this, SLOT(userInput(QString)));
         mMessages = new Messages(nullptr);
@@ -31,10 +35,6 @@ void ClientConsole::init()
         connect(mServerConnection, SIGNAL(registrationSuccess()), this, SLOT(registrationSuccess()));
         connect(mServerConnection, SIGNAL(gotLoggedInPeers(QByteArray)), this, SLOT(loggedInPeersFromServer(QByteArray)));
         connect(this, SIGNAL(sendDataToServer(QByteArray)), mServerConnection, SLOT(sendDataToServer(QByteArray)));
-
-		QFile cert("test/ARMADILL.crt");
-		cert.open(QIODevice::ReadOnly);
-		QSslSocket::addDefaultCaCertificate(QSslCertificate(cert.readAll()));
 
         //peerServer
         startPeerServer();

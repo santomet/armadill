@@ -17,6 +17,9 @@
 #include <QString>
 #include <QDateTime>
 #include <QDebug>
+#include <QFile>
+#include <QSslCertificate>
+#include <QSslKey>
 
 #define SERVER_CERT_FILE "test/ARMADILL.crt"
 #define SERVER_KEY_FILE "test/ARMADILL.key"
@@ -47,12 +50,24 @@ public:
 			throw CryptoException("Unable to load server certificate.");
 		}
 		mbedtls_mpi_init(&serial);
+
+		QFile certFile(SERVER_CERT_FILE);
+		certFile.open(QIODevice::ReadOnly);
+		certificate = QSslCertificate(certFile.readAll());
+
+		QFile keyFile(SERVER_KEY_FILE);
+		keyFile.open(QIODevice::ReadOnly);
+		key = QSslKey(keyFile.readAll(), QSsl::Rsa);
 	}
 	~CertificateManager() {
 		mbedtls_entropy_free(&entropy);
 		mbedtls_x509_crt_free(&server_crt);
 		mbedtls_pk_free(&server_key);
 	}
+
+	QSslCertificate certificate;
+	QSslKey key;
+
 	/*!
 	* \brief createCert        Creates a certificate from request
 	*

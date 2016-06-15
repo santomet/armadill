@@ -4,7 +4,7 @@
 #include <QObject>
 #include "servermanager.h"
 #include <QHostAddress>
-#include <QTcpSocket>
+#include <QSslSocket>
 #include <QThread>
 #include <QTextStream>
 
@@ -37,7 +37,7 @@ private:
 
     QThread *mThread{nullptr};
     ServerManager *mServerManager;
-    QTcpSocket *mSoc;
+    QSslSocket *mSoc;
     qintptr mSocDescriptor;
     QString mPeerAddress;
     QString mNickName{""};

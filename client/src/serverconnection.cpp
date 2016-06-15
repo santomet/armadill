@@ -18,13 +18,24 @@ void ServerConnection::sendDataToServer(QByteArray array)
 
 void ServerConnection::init()
 {
-    mSoc = new QTcpSocket(this);
+    mSoc = new QSslSocket(this);
+	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
+	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
+
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
-    connect(mSoc, SIGNAL(connected()), this, SLOT(connectionSuccess()));
-    connect(mSoc, SIGNAL(connected()), this, SIGNAL(connectSuccess()));
+    connect(mSoc, SIGNAL(encrypted()), this, SLOT(connectionSuccess()));
+    connect(mSoc, SIGNAL(encrypted()), this, SIGNAL(connectSuccess()));
     connect(mSoc, SIGNAL(readyRead()), this, SLOT(dataFromServerReady()));
     connect(mSoc, SIGNAL(disconnected()), this, SLOT(serverDisconnected()));
-    mSoc->connectToHost(mServerAddress, mPort);
+	connect(mSoc, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sllErrors(const QList<QSslError> &)));
+    mSoc->connectToHostEncrypted(mServerAddress, mPort);
+}
+
+void ServerConnection::sllErrors(const QList<QSslError> & errors) {
+	if (errors.size() > 1) return;
+	if (errors.first().error() != QSslError::HostNameMismatch) return;
+
+	mSoc->ignoreSslErrors();
 }
 
 void ServerConnection::connectionError(QAbstractSocket::SocketError error)

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QtNetwork/QtNetwork>
-#include <QtNetwork/QTcpSocket>
+#include <QtNetwork/QSslSocket>
 #include <QThread>
 #include <QJsonObject>
 #include "krypto.h"
@@ -46,10 +46,11 @@ protected slots:
     void connectionSuccess() {this->mConnected = true; qDebug() << "successfully connected, please log in(l) or register(r)";}
     void dataFromServerReady();
     void serverDisconnected() {this->mConnected = false; qDebug() << "disconnected :(";}
+	void sllErrors(const QList<QSslError> & errors);
 
 private:
     bool mConnected{false};
-    QTcpSocket *mSoc;
+    QSslSocket *mSoc;
     QThread *mThread;
 };
 

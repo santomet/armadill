@@ -44,10 +44,14 @@ ClientConnection::~ClientConnection()
 
 void ClientConnection::init()
 {
-    mSoc = new QTcpSocket(this);
+    mSoc = new QSslSocket(this);
     mSoc->setSocketDescriptor(mSocDescriptor);
-    if(mThread != nullptr)
-    {
+	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
+	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyNone);
+	mSoc->setLocalCertificate(certMngr.certificate);
+	mSoc->setPrivateKey(certMngr.key);
+
+    if(mThread != nullptr) {
         connect(mSoc, SIGNAL(disconnected()), this, SLOT(doneSlot()));
     }
     else
@@ -57,6 +61,8 @@ void ClientConnection::init()
     }
     mPeerAddress = mSoc->peerAddress().toString();
     connect(mSoc, SIGNAL(readyRead()), this, SLOT(readDataFromClient()));
+
+	mSoc->startServerEncryption();
     qDebug() << "connection created: " << mPeerAddress;
 }
 
