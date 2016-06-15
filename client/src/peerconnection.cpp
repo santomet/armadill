@@ -44,8 +44,8 @@ void PeerConnection::init() {
 }
 
 void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
-//	if (errors.size() > 1) return;
-//	if (errors.first().error() != QSslError::HostNameMismatch) return;
+	if (errors.size() > 1) return;
+	if (errors.first().error() != QSslError::HostNameMismatch) return;
 
     //TODO: Tuna by sa zislo len zistit pre nas potrebne veci: Ci je to podpisane nasim certifikatom
     //(vid TODO hore) a ci to ma tych 24 hodin max
