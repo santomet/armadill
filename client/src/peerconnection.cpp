@@ -18,7 +18,7 @@ PeerConnection::PeerConnection(qintptr soc, peer _peer, ServerConnection *server
 
 void PeerConnection::init() {
     mSoc = new QSslSocket(this);
-	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
+    mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2);
     mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
     mSoc->setLocalCertificate(Messages::localCert);
     mSoc->setPrivateKey(Messages::localKey);
