@@ -246,6 +246,15 @@ void ClientConsole::command(QString cmdtext) {
 		QCoreApplication::exit(0);
 	}
 	else if (cmdtext.startsWith("file")) {
-		//Messages::FileSendingContext::sendFile(*mPeerSessions.value(mActivePeer), cmdtext.mid(5), mPeerSessions.value(mActivePeer)->send);
+        //Messages::FileSendingContext::sendFile(*mPeerSessions.value(mActivePeer), cmdtext.mid(5), mPeerSessions.value(mActivePeer)->send);
 	}
+    else if (cmdtext == "quit") {
+        if(mActivePeer == -1)
+        {
+            qDebug() << "you are not connected to any peer";
+            return;
+        }
+        QMetaObject::invokeMethod(mPeerConnections.value(mActivePeer), "disconnectPeer");
+        mActivePeer = -1;
+    }
 }

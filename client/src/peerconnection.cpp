@@ -54,7 +54,12 @@ void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
 }
 
 void PeerConnection::successfulEncryptedConnection() { 
-	mPeer.name = mSoc->peerCertificate().subjectInfo(QSslCertificate::CommonName).at(0);
+    mPeer.name = mSoc->peerCertificate().subjectInfo(QSslCertificate::CommonName).at(0);
+}
+
+void PeerConnection::disconnectPeer()
+{
+    mSoc->disconnectFromHost();
 }
 
 void PeerConnection::sendDataToPeer(QByteArray a)

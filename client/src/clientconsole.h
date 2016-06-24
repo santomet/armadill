@@ -34,7 +34,7 @@ private:
 
     mbedtls_entropy_context mTLS_entropy; //entropy
 
-    int mActivePeer;    //peer which we are communicating with (no multiple chats)
+    int mActivePeer{-1};    //peer which we are communicating with (no multiple chats)
 
     /**
      * @brief mPeerSessions, mPeerConnections, mNickConnectionMap               peer identifying system (sessions may not be used??)

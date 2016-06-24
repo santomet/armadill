@@ -58,6 +58,7 @@ public slots:
     void sendDataToPeer(QByteArray a);
 	void successfulEncryptedConnection();
     void stateChanged(QAbstractSocket::SocketState s) {qDebug() << s;}
+    void disconnectPeer();
 private slots:
     void connectionError(QAbstractSocket::SocketError error);
     void connectionSuccess() {emit peerConnected(mID);}
