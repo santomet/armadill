@@ -46,7 +46,7 @@ void ClientConnection::init()
 {
     mSoc = new QSslSocket(this);
     mSoc->setSocketDescriptor(mSocDescriptor);
-	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
+    mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2);
 	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyNone);
 	mSoc->setLocalCertificate(certMngr.certificate);
 	mSoc->setPrivateKey(certMngr.key);

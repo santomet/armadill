@@ -19,7 +19,7 @@ void ServerConnection::sendDataToServer(QByteArray array)
 void ServerConnection::init()
 {
     mSoc = new QSslSocket(this);
-	mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2OrLater);
+    mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2);
 	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
 
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
