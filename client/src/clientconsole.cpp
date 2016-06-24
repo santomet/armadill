@@ -74,6 +74,7 @@ void ClientConsole::connectToPeer(peer p)
     PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
     connect(peerConn, SIGNAL(peerConnected(int)), this, SLOT(connectionSuccessful(int)));
     connect(peerConn, SIGNAL(dataReady(int,QByteArray)), this, SLOT(dataFromPeerReady(int,QByteArray)));
+    connect(peerConn, SIGNAL(peerDisconnected(int)), this, SLOT(endConnection(int)));
 	int i = currentID++;
     peerConn->setID(i);
     mPeerConnections.insert(i, peerConn);
@@ -97,10 +98,19 @@ void ClientConsole::connectionSuccessful(int id)
 void ClientConsole::newRemoteInitiatedConnection(PeerConnection *c)
 {
     connect(c, SIGNAL(dataReady(int,QByteArray)), this, SLOT(dataFromPeerReady(int,QByteArray)));
+    connect(c, SIGNAL(peerDisconnected(int)), this, SLOT(endConnection(int)));
     int i = currentID++;
     mPeerConnections.insert(i, c);
     c->setID(i);
     connect(c, SIGNAL(peerConnected(int)), this, SLOT(connectionSuccessful(int)));
+}
+
+void ClientConsole::endConnection(int id)
+{
+    qDebug() << "Disconnected peer: " << mNickConnectionMap.key(id);
+    mNickConnectionMap.remove(mNickConnectionMap.key(id));
+    this->mExpectedInput = Idle;
+    qDebug() << "please select another peer to connect (or (p) to renew online peers)";
 }
 
 Session & sessionHandler(ClientConsole & c, const QString & nick) {

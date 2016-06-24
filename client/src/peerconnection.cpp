@@ -40,7 +40,7 @@ void PeerConnection::init() {
     mPeerAddress = mSoc->peerAddress().toString();
     mPeerPort = mSoc->peerPort();
     connect(mSoc, SIGNAL(readyRead()), this, SLOT(readDataFromClient()));
-    qDebug() << "connection created: " << mPeerAddress;
+    qDebug() << "connection created: " << (mPeerAddress.isEmpty() ? mPeer.address : mPeerAddress);
 }
 
 void PeerConnection::sllErrorsClient(const QList<QSslError> & errors) {
@@ -65,6 +65,7 @@ void PeerConnection::sendDataToPeer(QByteArray a)
 
 void PeerConnection::connectionError(QAbstractSocket::SocketError error) {
     qDebug() << "Connection error(" << error << "): " << mSoc->errorString();
-    QCoreApplication::exit(0);
+    //QCoreApplication::exit(0);
+
 }
 

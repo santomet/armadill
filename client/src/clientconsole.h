@@ -103,8 +103,8 @@ public slots:
     void connectToPeer(peer p);
     void connectionSuccessful(int id); //self-initiated
     void newRemoteInitiatedConnection(PeerConnection *c);
-    void endConnection(PeerConnection *c) {} //remote-initiated before established
-    void endConnection(int id) {} //self-initiated/established //TODO both
+    void endConnection(PeerConnection *c) {} //signal from server
+    void endConnection(int id); //signal from both
     void sendDataToPeer(QByteArray a);
 
     void dataFromPeerReady(int id, QByteArray a);

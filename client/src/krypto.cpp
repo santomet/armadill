@@ -164,23 +164,6 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool SessionKey::generateKey() {
     std::lock_guard<std::mutex> dhmLock (dhmUse);
     if (!my || !other) return false;
