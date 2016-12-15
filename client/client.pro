@@ -173,5 +173,6 @@ SOURCES += \
 
 DISTFILES += \
     ../include/cmake_install.cmake \
-    ../include/CMakeLists.txt
+    ../include/CMakeLists.txt \
+    cert.crt
 
