@@ -21,8 +21,8 @@
 #include <QSslCertificate>
 #include <QSslKey>
 
-#define SERVER_CERT_FILE "test/ARMADILL.crt"
-#define SERVER_KEY_FILE "test/ARMADILL.key"
+#define SERVER_CERT_FILE "cert.crt"
+#define SERVER_KEY_FILE "cert.key"
 
 class CryptoException : public std::runtime_error {
 	int err;

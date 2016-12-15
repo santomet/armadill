@@ -20,7 +20,7 @@ void ClientConsole::init()
         mbedtls_entropy_init(&mTLS_entropy); //start an entropy
         mbedtls_entropy_gather(&mTLS_entropy);
 
-		QFile cert("test/ARMADILL.crt");
+        QFile cert("cert.crt");
 		cert.open(QIODevice::ReadOnly);
 		QSslSocket::addDefaultCaCertificate(QSslCertificate(cert.readAll()));
 
