@@ -9,9 +9,9 @@ Basically, we tried to remake a (very) simplified version of Open Whisper System
 If you have similar assingment at school, or you are trying to make client-server application in Qt, this can help
 
 Known issues:
-> -s*itload of forgotten ones
-> -it does not work if client-to-client communication is going through NAT
-> -other ones we decided to call features
+> - s*itload of forgotten ones
+> - it does not work if client-to-client communication is going through NAT
+> - other ones we decided to call features
 
 Easy to use:
 > 1. clone
