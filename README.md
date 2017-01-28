@@ -17,5 +17,5 @@ Easy to use:
 > 1. clone
 > 2. qmake (Qt 5.6)
 > 3. make
-> 4. replace cert.crt and cert.key in folder with server binary with yours (or keep the testing ones)
+> 4. replace cert.crt and cert.key in folder with server (and cert.crt in folder with client) binary with yours (or keep the testing ones)
 > 5. have fun and don't forget, don't trust any software at 100%, especially not this one ;)
