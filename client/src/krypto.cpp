@@ -97,7 +97,7 @@ QByteArray SessionKey::protect(const QByteArray & message, const QByteArray & da
 
     {
         std::lock_guard<std::mutex> keyLock(keyUse);
-        if (key_enc_uses.fetch_add(1) >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for 10 encryptions.");
+        if (key_enc_uses.fetch_add(1) >= MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key was already used for max amount of encryptions.");
         mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, toUChar(currentkey), 256);
     }
 
