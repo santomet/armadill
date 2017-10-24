@@ -162,13 +162,26 @@ QByteArray SessionKey::unprotect(const QByteArray & message, const QByteArray & 
     return ret;
 }
 
-
+template <class T>
+class ScopedLock {
+	T & a;
+	T & b;
+public:
+	ScopedLock(T & a, T & b) : a(a), b(b) {
+		std::lock(a, b);
+	}
+	ScopedLock(const ScopedLock &) = delete;
+	ScopedLock(ScopedLock &&) = delete;
+	~ScopedLock() {
+		a.unlock();
+		b.unlock();
+	}
+};
 
 bool SessionKey::generateKey() {
-    std::lock_guard<std::mutex> dhmLock (dhmUse);
+	ScopedLock<std::mutex> lock(dhmUse, keyUse);
     if (!my || !other) return false;
 
-    std::lock_guard<std::mutex> keyLock(keyUse);
     oldkey = currentkey;
     ++keyid;
 
