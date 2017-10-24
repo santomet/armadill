@@ -3,7 +3,10 @@
 
 #include <atomic>
 #include <mutex>
+#include <array>
 #include <QObject>
+#include <QMap>
+#include <QDebug>
 
 #include "../include/mbedtls/aes.h"
 #include "../include/mbedtls/dhm.h"
@@ -17,12 +20,17 @@
 #include "../include/mbedtls/rsa.h"
 #include "../include/mbedtls/pk.h"
 
-#define ENCRYPTION_KEY_SIZE 256
+#define ENCRYPTION_KEY_BITS ENCRYPTION_KEY_SIZE*8
+#define ENCRYPTION_KEY_SIZE 32
+#define DH_SIZE 256
+
 #define TAG_LENGTH	16
 #define IV_LENGTH	12
 #define MAX_MESSAGES_WITH_ONE_KEY 10
 #define RSA_SIZE 2048
 #define RSA_EXPONENT 65537
+
+inline const unsigned char * toUChar(const QByteArray & a) { return reinterpret_cast<const unsigned char *>(a.operator const char *()); };
 
 class Krypto    : public QObject
 {
@@ -87,21 +95,23 @@ public:
 };
 
 class SessionKey {
+	bool initiator;
+
 	mbedtls_entropy_context* entropy;
 	mbedtls_ctr_drbg_context random;
 	mbedtls_dhm_context dhmc;
 
-	unsigned char keyid = 0;
-	QByteArray oldkey;
-	QByteArray currentkey;
+	unsigned char SenderKeyID = 0;
+	unsigned char ReceiverKeyID = 0;
+
+	QByteArray senderKey;
+	std::array<std::unique_ptr<QByteArray>, 256> receiverKeys;
 
 	std::atomic<bool> my;
 	std::atomic<bool> other;
 	std::atomic<bool> keysReady;
 
 	std::atomic<size_t> key_enc_uses;
-	std::atomic<size_t> key_dec_uses;
-	std::atomic<size_t> key_old_dec_uses;
 
 	std::mutex keyUse;
 	std::mutex dhmUse;
@@ -123,7 +133,7 @@ class SessionKey {
 	static HelperMpi helper;
 
 public:
-	SessionKey(mbedtls_entropy_context * ectx) : entropy(ectx), my(false), other(false), key_enc_uses(0), key_dec_uses(0), key_old_dec_uses(0), keysReady(false) {
+	SessionKey(mbedtls_entropy_context * ectx, bool initiator) : entropy(ectx), my(false), other(false), key_enc_uses(0), keysReady(false), initiator(initiator) {
 		mbedtls_dhm_init(&dhmc);
         uchar out[2048];
         size_t len;
@@ -133,10 +143,8 @@ public:
 		mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, entropy, (const unsigned char *)personalization, strlen(personalization));
 		
 		helper.init(&dhmc.P, &dhmc.G);
-		//mbedtls_mpi_read_string(&dhmc.P, 16, "C5577A1DD79D0ADFE26D012F976778B069180AD0D704C61BBF23435838EE899D700B11A15713B8C09639DABF8DC1EC36F34AF3C2ECEB45BF5E0DA2C1E9DC04CAF0612F5128AA21B0306EDFE311D42999E17B54C7BA0FBDC3B46316D5CA592ED22AB934D21234D2E475F225D1F91AE0C32DDBFA0D468F43399E19E557D6F62B8A1EC66BE73C1F889422576B9CE34F3F02D2A4809D0AE48C46A2B92DBB47C97DC20085EB34BBD20F803E30689CBE4A83D9D6D215DE645CD984763C5B3FE098CEF3914CF0987C17D20749B6E996BA3DFB66340681B3B4369AB746F29E76277DDB93D17F0BC8F409369F9B370C71FDCE2ADCB8B6433A3DED4FAF13B91683D04005B3");
-		//mbedtls_mpi_read_string(&dhmc.G, 16, "04");
 
-        mbedtls_dhm_make_params(&dhmc, 256, out, &len, mbedtls_ctr_drbg_random, &random);
+        mbedtls_dhm_make_params(&dhmc, DH_SIZE, out, &len, mbedtls_ctr_drbg_random, &random);
     };
 	SessionKey(const SessionKey &) = delete;
 	SessionKey(SessionKey &&) = delete;
@@ -189,12 +197,6 @@ public:
 	size_t getKeyEncUses() const { return key_enc_uses; };
 
 	/*!
-	* \brief getKeyDecUses
-	* \return							Number of times the current key was used to decrypt a message
-	*/
-	size_t getKeyDecUses() const { return key_dec_uses; };
-
-	/*!
 	* \brief isMyDHCreated
 	* \return                          true, if client diffie-hellman was already created for the next key, false otherwise
 	*/
@@ -222,7 +224,31 @@ public:
 	* \brief generateKey				Get current shared key. FOR DEBUG PURPOSSES ONLY!
 	* \return							Current shared key
 	*/
-	const QByteArray & getSharedKey() const { return currentkey; };
+	const QByteArray & getCurrentKey() const { return QByteArray(); };
+
+	std::pair<unsigned char, std::unique_ptr<QByteArray>> getSenderKey() {
+		if (senderKey.length() != 32) throw KryptoException("No encryption key!");
+		if (++key_enc_uses > MAX_MESSAGES_WITH_ONE_KEY) throw KryptoOveruseException("Key used too many times!");
+
+		std::unique_ptr<QByteArray> key(new QByteArray(32, '0'));
+		
+		QByteArray input;
+		input.append("A", 1);
+		input.append(senderKey);
+		mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), toUChar(input), input.length(), reinterpret_cast<unsigned char*>(key->data()));
+
+		input[0] = 'B';
+		mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), toUChar(input), input.length(), reinterpret_cast<unsigned char*>(senderKey.data()));
+
+		return std::make_pair(SenderKeyID++, std::move(key));
+	};
+	std::unique_ptr<QByteArray> getReceiverKey(unsigned char id) { 
+		if (receiverKeys.at(id).get() == nullptr) {
+			qDebug() << id;
+			throw KryptoException("Invalid key.");
+		}
+		return std::unique_ptr<QByteArray>(receiverKeys.at(id).release());
+	};
 };
 
 #endif // KRYPTO_H

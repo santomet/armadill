@@ -15,7 +15,7 @@ class Session {
 
 	std::function<void(const QByteArray &)> sender;
 public:
-	Session(QString name, QString otherName, mbedtls_entropy_context * entropy) : myName(name), otherName(otherName), key(entropy) { };
+	Session(QString name, QString otherName, mbedtls_entropy_context * entropy, bool initiator) : myName(name), otherName(otherName), key(entropy, initiator) { };
 
 	virtual ~Session() {};
 

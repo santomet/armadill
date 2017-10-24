@@ -85,90 +85,96 @@ bool Messages::parseJsonUsers(ArmaMessage &message, QList<peer>& usersList) {
 }
 
 bool Messages::parseMessage(std::function<Session &(QString & name)> sessions, const ArmaMessage & message, std::function<void(Session &, MsgType, const ReceivedMessage &)> callback) {
-	QString senderNick, receiverNick;
-	QByteArray dh;
-    QDateTime timestamp;
-    MsgType type;
+	try {
+		QString senderNick, receiverNick;
+		QByteArray dh;
+		QDateTime timestamp;
+		MsgType type;
 
-    QList<QByteArray> list = message.split(armaSeparator);
+		QList<QByteArray> list = message.split(armaSeparator);
 
-    if (list.size() < 5) throw MessageException("incomplete message");
+		if (list.size() < 5) throw MessageException("incomplete message");
 
-    senderNick = QString::fromUtf8(QByteArray::fromBase64(list[0]));
-    receiverNick = QString::fromUtf8(QByteArray::fromBase64(list[1]));
+		senderNick = QString::fromUtf8(QByteArray::fromBase64(list[0]));
+		receiverNick = QString::fromUtf8(QByteArray::fromBase64(list[1]));
 
-	Session & session = sessions(senderNick);
-	if (session.getMyName() != receiverNick) throw MessageException("Message not for this client.");
+		Session & session = sessions(senderNick);
+		if (session.getMyName() != receiverNick) throw MessageException("Message not for this client.");
 
-	ReceivedMessage parsedMessage;
-    timestamp.setMSecsSinceEpoch(list[2].toLongLong());
-    parsedMessage.timestamp = timestamp;
+		ReceivedMessage parsedMessage;
+		timestamp.setMSecsSinceEpoch(list[2].toLongLong());
+		parsedMessage.timestamp = timestamp;
 
-    type = static_cast<MsgType>(list[3][0] - 'A');
+		type = static_cast<MsgType>(list[3][0] - 'A');
 
 
-    QByteArray messageText;
-
-    if(type == Messages::MsgType::PureDH)
-    {
-        dh = QByteArray::fromBase64(list[4]);
-
-        SessionKey& sk = session.getKey();
-
-        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
-        QByteArray messageText;
-        try {
-            QByteArray a1 = message.left(contextDataLength);
-            QByteArray a2 = message.right(message.length() - contextDataLength);
-            messageText = sk.unprotect(a2, a1);
-        }
-        catch (KryptoException e) {
-            return false;
-        }
-        sk.setDH(dh);
-        sk.generateKey();
-
-        parsedMessage.messageText = messageText;
-		return true;
-    }
-    else if (type % 2) {
-		if (list.size() < 6) throw MessageException("incomplete message");
-		dh = QByteArray::fromBase64(list[4]);
-
-		SessionKey& sk = session.getKey();
-
-		int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
 		QByteArray messageText;
-		try {
-			QByteArray a1 = message.left(contextDataLength);
-			QByteArray a2 = message.right(message.length() - contextDataLength);
-			messageText = sk.unprotect(a2, a1);
-		}
-		catch (KryptoException e) {
-			return false;
-		}
-		sk.setDH(dh);
-		sk.generateKey();
 
-		parsedMessage.messageText = messageText;
+		if (type == Messages::MsgType::PureDH)
+		{
+			dh = QByteArray::fromBase64(list[4]);
+
+			SessionKey& sk = session.getKey();
+
+			int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
+			/*QByteArray messageText;
+			try {
+				QByteArray a1 = message.left(contextDataLength);
+				QByteArray a2 = message.right(message.length() - contextDataLength);
+				messageText = sk.unprotect(a2, a1);
+			}
+			catch (KryptoException e) {
+				return false;
+			}*/
+			sk.setDH(dh);
+			sk.generateKey();
+
+			parsedMessage.messageText = messageText;
+			return true;
+		}
+		else if (type % 2) {
+			if (list.size() < 6) throw MessageException("incomplete message");
+			dh = QByteArray::fromBase64(list[4]);
+
+			SessionKey& sk = session.getKey();
+
+			int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + list[4].size() + 5;
+			QByteArray messageText;
+			try {
+				QByteArray a1 = message.left(contextDataLength);
+				QByteArray a2 = message.right(message.length() - contextDataLength);
+				messageText = sk.unprotect(a2, a1);
+			}
+			catch (KryptoException e) {
+				qDebug() << "Decryption Error: " << e.what();
+				return false;
+			}
+			sk.setDH(dh);
+			sk.generateKey();
+
+			parsedMessage.messageText = messageText;
+		}
+		//regularMessage
+		else {
+
+			SessionKey& sk = session.getKey();
+			int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
+			try {
+				QByteArray a1 = message.left(contextDataLength);
+				QByteArray a2 = message.right(message.length() - contextDataLength);
+				messageText = sk.unprotect(a2, a1);
+			}
+			catch (KryptoException e) {
+				return false;
+			}
+			parsedMessage.messageText = messageText;
+		}
+
+		callback(session, type, parsedMessage);
 	}
-    //regularMessage
-	else {
-
-        SessionKey& sk = session.getKey();
-        int contextDataLength = list[0].size() + list[1].size() + list[2].size() + list[3].size() + 4; //number of separators
-        try{
-            QByteArray a1 = message.left(contextDataLength);
-            QByteArray a2 = message.right(message.length() - contextDataLength);
-            messageText = sk.unprotect(a2, a1);
-        }
-        catch (KryptoException e) {
-            return false;
-        }
-        parsedMessage.messageText = messageText;
-    }
-
-	callback(session, type, parsedMessage);
+	catch (KryptoException & e) {
+		qDebug() << e.what();
+	}
     return true;
 }
 
@@ -194,7 +200,7 @@ QByteArray Messages::addMessageHeader(Session & session, const QByteArray & payl
 	}
 	ret.append(Messages::armaSeparator);
 
-	ret.append(key.protect(payload, ret));
+	if(type != Messages::MsgType::PureDH) ret.append(key.protect(payload, ret));
 
 	if (dh.length() > 0) key.generateKey();
 	return ret;

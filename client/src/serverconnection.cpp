@@ -22,6 +22,10 @@ void ServerConnection::init()
     mSoc->setProtocol(QSsl::SslProtocol::TlsV1_2);
 	mSoc->setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyPeer);
 
+	QFile cert("cert.crt");
+	cert.open(QIODevice::ReadOnly);
+	mSoc->addCaCertificate(QSslCertificate(cert.readAll()));
+
     connect(mSoc, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
     connect(mSoc, SIGNAL(encrypted()), this, SLOT(connectionSuccess()));
     connect(mSoc, SIGNAL(encrypted()), this, SIGNAL(connectSuccess()));

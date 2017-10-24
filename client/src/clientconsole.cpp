@@ -71,7 +71,7 @@ static void sendingHelperFunc(PeerConnection * ptr, const QByteArray & data) {
 
 void ClientConsole::connectToPeer(peer p)
 {
-    PeerConnection *peerConn = new PeerConnection(0, p, nullptr);
+    PeerConnection *peerConn = new PeerConnection(true, 0, p, nullptr);
     connect(peerConn, SIGNAL(peerConnected(int)), this, SLOT(connectionSuccessful(int)));
     connect(peerConn, SIGNAL(dataReady(int,QByteArray)), this, SLOT(dataFromPeerReady(int,QByteArray)));
     connect(peerConn, SIGNAL(peerDisconnected(int)), this, SLOT(endConnection(int)));
@@ -84,7 +84,7 @@ void ClientConsole::connectToPeer(peer p)
 void ClientConsole::connectionSuccessful(int id)
 {
     PeerConnection *c = mPeerConnections.value(id);
-    Session *s = new Session(mNickName, c->getPeer().name, &mTLS_entropy);
+    Session *s = new Session(mNickName, c->getPeer().name, &mTLS_entropy, c->isInitiator());
     s->setSender(std::bind(sendingHelperFunc, c, std::placeholders::_1));
     mPeerSessions.insert(id, s);
     mNickConnectionMap.insert(c->getPeer().name, id);

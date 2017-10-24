@@ -20,7 +20,7 @@ class PeerConnection : public QObject
 {
     Q_OBJECT
 public:
-    explicit PeerConnection(qintptr soc = 0, peer _peer = {}, ServerConnection *server = nullptr, QObject *parent = 0);
+    explicit PeerConnection(bool initiator, qintptr soc = 0, peer _peer = {}, ServerConnection *server = nullptr, QObject *parent = 0);
 
     //getters
     int getID() {return mID;}
@@ -29,6 +29,7 @@ public:
     bool isEstablished() {return mEstablished;}
     int getPeerPort() {return mPeerPort;}
     QString getPeerAddress() {return mPeerAddress;}
+	bool isInitiator() const { return initiator; };
     //setters
     void setID(int id) {mID = id;}
     void setPeer(peer p) {mPeer = p;}
@@ -47,6 +48,7 @@ private:
     QString mNickName{""};
 
     bool mEstablished{false};
+	bool initiator;
 
 signals:
     void peerConnected(int id);
@@ -92,7 +94,7 @@ public slots:
     void deleteConnection(PeerConnection *c) {mConnections.removeOne(c); emit endRemoteInitiatedConnection(c);} //for ending the connection that has not been established yet
     void establishedConnection(PeerConnection *c) {disconnect(c, 0, this, 0); mConnections.removeOne(c);}   //when the connection is established (peer successfully identifies itself) we forget him
 protected:
-    void incomingConnection(qintptr handle) override {PeerConnection *c = new PeerConnection(handle, {}, mServerConnection); //creating PeerConnection with empty peer
+    void incomingConnection(qintptr handle) override {PeerConnection *c = new PeerConnection(false, handle, {}, mServerConnection); //creating PeerConnection with empty peer
                                                      mConnections.append(c);
                                                      emit newRemoteInitiatedConnection(c);
 													 // TODO

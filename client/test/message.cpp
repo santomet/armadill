@@ -78,8 +78,8 @@ public:
 		mbedtls_entropy_init(&mtls_entropy);
 		mbedtls_entropy_gather(&mtls_entropy);
 
-		s1 = new Session("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy);
-		s2 = new Session("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy);
+		s1 = new Session("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy, true);
+		s2 = new Session("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy, false);
 
 		exchangeDH();
 	};
@@ -161,12 +161,13 @@ TEST_CASE("Key exchange", "[Krypto]") {
 	mbedtls_entropy_gather(&mtls_entropy);
 
 	//Create "virtual" sessions for both clients
-	Session s("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy);
-	Session s2("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy);
+	Session s("ke@##$VFSDBket", "druhykeket#@1431", &mtls_entropy, true);
+	Session s2("druhykeket#@1431", "ke@##$VFSDBket", &mtls_entropy, false);
 
-	QSet<QString> usedKeys;
+	QSet<QByteArray> usedSKeys;
+	QSet<QByteArray> usedRKeys;
 
-	for (int i = 0; i < 20; ++i) {
+	for (int i = 0; i < 1000; ++i) {
 		//get each other's Diffie Hellman
 		s.getKey().setDH(s2.getKey().getDH());
 		s2.getKey().setDH(s.getKey().conditionalGetDH());
@@ -176,15 +177,24 @@ TEST_CASE("Key exchange", "[Krypto]") {
 		s2.getKey().generateKey();
 
 		//the key must be the same
-		REQUIRE_FALSE(usedKeys.contains(s.getKey().getSharedKey()));
-		usedKeys.insert(s.getKey().getSharedKey());
-		REQUIRE(usedKeys.contains(s.getKey().getSharedKey()));
-		bool same = s.getKey().getSharedKey() == s2.getKey().getSharedKey();
+		auto keypair = s.getKey().getSenderKey();
+		QByteArray & key = *keypair.second.get();
+		REQUIRE_FALSE(usedSKeys.contains(key));
+		usedSKeys.insert(key);
+		
+		QByteArray key2 = *s.getKey().getReceiverKey(keypair.first).get();
+		REQUIRE_FALSE(usedRKeys.contains(key2));
+		usedRKeys.insert(key2);
+		
+		bool same = key == key2;
 		REQUIRE(same);
-		REQUIRE(s.getKey().getSharedKey().length() == 256);
+
+		REQUIRE(key.length() == 32);
+		REQUIRE(key2.length() == 32);
 	}
 
-	REQUIRE(usedKeys.size() == 20);
+	REQUIRE(usedSKeys.size() == 20);
+	REQUIRE(usedRKeys.size() == 20);
 }
 
 TEST_CASE("Sending simple message", "[message]") {
